@@ -1,0 +1,2 @@
+# flexicash
+Flexicash microfinance system
