@@ -1,6 +1,6 @@
 from django.http import HttpResponse
 from loan.models import LoanType, LoanApplication
-from member.models import FlexiCashMember,MemberLoan,Transaction,Statement
+from member.models import FlexiCashMember,MemberLoan,Transaction
 
 def apply_loan_handler(request, session_id, phone_number, text):
     parts = text.split('*')
@@ -30,8 +30,8 @@ def apply_loan_handler(request, session_id, phone_number, text):
             loan_types = LoanType.objects.all()
             if loan_type_index < len(loan_types):
                 selected_loan_type = loan_types[loan_type_index]
-                amount = parts[2]
-                response = f"CON Please enter your PIN to confirm loan of {amount} for {selected_loan_type.name}:"
+                requested_amount = parts[2]
+                response = f"CON Please enter your PIN to confirm loan of {requested_amount} for {selected_loan_type.name}:"
                 return HttpResponse(response, content_type="text/plain")
         
         # If PIN is provided, process loan application
@@ -44,22 +44,22 @@ def apply_loan_handler(request, session_id, phone_number, text):
                 loan_types = LoanType.objects.all()
                 if loan_type_index < len(loan_types):
                     selected_loan_type = loan_types[loan_type_index]
-                    amount = parts[2]
+                    requested_amount = parts[2]
 
                     # Validate if amount is numeric
-                    if not amount.isdigit():
+                    if not requested_amount.isdigit():
                         return HttpResponse("END Invalid loan amount. Please enter a numeric value.", content_type="text/plain")
                     
                     # Save the loan application
                     loan_application = MemberLoan(
                         member=member,
                         loan_type=selected_loan_type,
-                        amount=amount,
+                        requested_amount=requested_amount,
                         duration=selected_loan_type.loan_duration,  # Set loan duration; you can calculate dynamically
                     )
                     loan_application.save()
 
-                    response = f"END Your loan of {amount} for {selected_loan_type.name} has been successfully submitted. Please wait as we process your application."
+                    response = f"END Your loan of {requested_amount} for {selected_loan_type.name} has been successfully submitted. Please wait as we process your application."
                     return HttpResponse(response, content_type="text/plain")
             else:
                 return HttpResponse("END Incorrect PIN. Please try again.", content_type="text/plain")
