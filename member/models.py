@@ -32,13 +32,12 @@ class FlexiCashMember(models.Model):
         verbose_name_plural = "FlexiCash Members"
 
 class MemberLoan(models.Model):
-   
     member = models.ForeignKey('FlexiCashMember', on_delete=models.CASCADE, related_name="loans")
     loan_type = models.ForeignKey('loan.LoanType', on_delete=models.PROTECT, related_name="loans")
     requested_amount = models.DecimalField(max_digits=10, decimal_places=2)  # Principal loan amount
     interest_rate = models.DecimalField(max_digits=5, decimal_places=2)  # Percentage
     duration = models.PositiveIntegerField(help_text="Duration in months")
-    status = models.CharField(max_length=20, default='PENDING')
+    status = models.CharField(max_length=20, default='Pending')
     applied_on = models.DateTimeField(auto_now_add=True)
     due_date = models.DateField(null=True, blank=True)
     loan_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)

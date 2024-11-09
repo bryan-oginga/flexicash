@@ -11,7 +11,7 @@ SECRET_KEY = 'django-insecure-50#5$pbme&ajmg%r-c2hlsec(74lqg#69o%)x24)&yj+d$365n
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['158c-41-212-64-158.ngrok-free.app','localhost','127.0.0.1',]
+ALLOWED_HOSTS = ['906e-41-212-64-158.ngrok-free.app','localhost','127.0.0.1',]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -21,8 +21,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
+    'loan.apps.LoanConfig',
+
+    
     'ussd',
-    'loan',
     'accounts',
     'report',
     'payment',
