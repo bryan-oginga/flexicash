@@ -1,12 +1,12 @@
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from member.models import FlexiCashMember
+from fleximembers.models import FlexiCashMember
 from ussd.ussd_handlers.registration import handle_registration
 from ussd.ussd_handlers.apply_loan import apply_loan_handler
 from ussd.ussd_handlers.repay_loan import repay_loan_handler
 from ussd.ussd_handlers.check_limit import check_limit_handler
 from ussd.ussd_handlers.mini_statement import mini_statement_handler
-from ussd import constants  # Import the constants
+from ussd import constants
 
 @csrf_exempt
 def ussd_view(request):
@@ -17,6 +17,8 @@ def ussd_view(request):
     phone_number = request.POST.get("phoneNumber", "").strip()
     text = request.POST.get("text", "").strip()
     text_parts = text.split("*")
+
+    response = ""  # Default response variable
 
     try:
         user = FlexiCashMember.objects.get(phone=phone_number)
@@ -37,15 +39,8 @@ def ussd_view(request):
         elif text_parts[0] == "1":
             response = apply_loan_handler(request, session_id, phone_number, text)
         elif text_parts[0] == "2":
-            # Repay Loan Options
-            response = constants.REPAYMENT_OPTIONS
-            if len(text_parts) == 2:
-                if text_parts[1] == "1":
-                    response = constants.REPAYMENT_FULL_PROMPT
-                elif text_parts[1] == "2":
-                    response = constants.REPAYMENT_PARTIAL_PROMPT
-            elif len(text_parts) == 3:
-                response = repay_loan_handler(request, session_id, phone_number, text)
+            # User selects "Repay Loan" (We delegate further logic to repay_loan_handler)
+            response = repay_loan_handler(request, session_id, phone_number, text)
         elif text_parts[0] == "3":
             response = check_limit_handler(request, session_id, phone_number, text)
         elif text_parts[0] == "4":

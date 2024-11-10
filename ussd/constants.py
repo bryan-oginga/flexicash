@@ -1,6 +1,3 @@
-# constants.py
-
-# Welcome messages
 WELCOME_MESSAGE_NEW_USER = "CON Welcome to FlexiCash Microfinance. Please select an option:\n1. Register"
 WELCOME_MESSAGE_REGISTERED_USER = (
     "CON Welcome back to FlexiCash.\n"
@@ -41,3 +38,4 @@ INVALID_AMOUNT_ERROR = "END Please enter a valid numeric amount."
 PIN_MISMATCH_ERROR = "END PINs do not match. Please try again."
 LOAN_APPLICATION_SUCCESS = "END Loan application submitted successfully."
 PENDING_BALANCE_ERROR = "You have a pending loan of {}. Please repay it before applying for a new loan."
+

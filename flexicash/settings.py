@@ -21,14 +21,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
-    'loan.apps.LoanConfig',
 
     
     'ussd',
     'accounts',
     'report',
-    'payment',
-    'member',
+    'fleximembers',
+    'loanapplication',
+    'loanmanagement',
+    'lipanampesa',
     
    
 ]

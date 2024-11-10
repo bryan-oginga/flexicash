@@ -1,6 +1,8 @@
 from django.http import HttpResponse
 from decimal import Decimal
-from member.models import FlexiCashMember
+from fleximembers.models import FlexiCashMember
+from loanapplication.models import MemberLoanApplication,Transaction
+from loanmanagement.models import LoanProduct,FlexiCashLoanApplication
 
 def check_limit_handler(request, session_id, phone_number, text):
     member = FlexiCashMember.objects.filter(phone=phone_number).first()

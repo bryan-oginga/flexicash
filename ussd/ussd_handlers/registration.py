@@ -1,5 +1,5 @@
 from django.http import HttpResponse
-from member.models import FlexiCashMember  # Import your member model
+from fleximembers.models import FlexiCashMember  # Import your member model
 from django.db import IntegrityError
 
 def check_member_exists(phone_number):

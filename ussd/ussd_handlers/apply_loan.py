@@ -1,8 +1,10 @@
 from decimal import Decimal
 from django.shortcuts import get_object_or_404
 from ussd import constants
-from loan.models import LoanType  # Ensure LoanType model is correctly imported
-from member.models import FlexiCashMember,MemberLoan,Transaction  # Ensure Transaction model is correctly imported
+from fleximembers.models import FlexiCashMember
+from loanapplication.models import MemberLoanApplication,Transaction
+from loanmanagement.models import LoanProduct,FlexiCashLoanApplication
+
 from django.http import HttpResponse
 
 
@@ -12,6 +14,7 @@ def check_member_exists(phone_number):
         return FlexiCashMember.objects.get(phone=phone_number)
     except FlexiCashMember.DoesNotExist:
         return None
+
 
 def apply_loan_handler(request, session_id, phone_number, text):
     """Handles the loan application process for FlexiCash members."""
@@ -23,26 +26,26 @@ def apply_loan_handler(request, session_id, phone_number, text):
         return HttpResponse("END Member not found. Please register first.", content_type="text/plain")
 
     # Check if the member has any pending balance (must be zero to apply for a new loan)
-    if member.balance != 0:
+    if member.balance > 0:
         return HttpResponse("END You have a pending balance. Please repay before applying for a new loan.", content_type="text/plain")
 
     # Step 1: Prompt user to select loan type if not already selected
     if len(parts) == 1:
-        loan_types = LoanType.objects.all()
-        loan_options = "\n".join([f"{index+1}. {loan_type.name}" for index, loan_type in enumerate(loan_types)])
+        loan_products = LoanProduct.objects.all()
+        loan_options = "\n".join([f"{index+1}. {loan_product.name}" for index, loan_product in enumerate(loan_products)])
         return HttpResponse(f"CON Select Loan Type:\n{loan_options}", content_type="text/plain")
 
     # Step 2: Capture loan type selection
     elif len(parts) == 2:
         try:
             selected_index = int(parts[1]) - 1
-            loan_types = LoanType.objects.all()
-            loan_type = loan_types[selected_index]
+            loan_products = LoanProduct.objects.all()
+            loan_product = loan_products[selected_index]
         except (ValueError, IndexError):
             return HttpResponse("END Invalid loan type selected. Please try again.", content_type="text/plain")
         
         # Prompt for loan amount
-        return HttpResponse(f"CON Enter loan amount for {loan_type.name}:", content_type="text/plain")
+        return HttpResponse(f"CON Enter loan amount for {loan_product.name}:", content_type="text/plain")
 
     # Step 3: Enter loan amount
     elif len(parts) == 3:
@@ -67,19 +70,19 @@ def apply_loan_handler(request, session_id, phone_number, text):
             return HttpResponse("END Incorrect PIN. Please try again.", content_type="text/plain")
         
         # Get loan type and amount from the previous inputs
-        loan_type_index = int(parts[1]) - 1
-        loan_types = LoanType.objects.all()
-        selected_loan_type = loan_types[loan_type_index]
+        loan_product_index = int(parts[1]) - 1
+        loan_products = LoanProduct.objects.all()
+        selected_loan_product = loan_products[loan_product_index]
         requested_amount = Decimal(parts[2])
 
         # Create loan application entry
-        MemberLoan.objects.create(
+        MemberLoanApplication.objects.create(
             member=member,
-            loan_type=selected_loan_type,
+            loan_product=selected_loan_product,
             requested_amount=requested_amount
         )
 
         # Clear any session or temporary data
-        return HttpResponse(f"END Your loan of {requested_amount} for {selected_loan_type.name} has been successfully submitted. We will process your application.", content_type="text/plain")
+        return HttpResponse(f"END Your loan of {requested_amount} for {selected_loan_product.name} has been successfully submitted. We will process your application.", content_type="text/plain")
 
     return HttpResponse("END Invalid option. Please try again.", content_type="text/plain")

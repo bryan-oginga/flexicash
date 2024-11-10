@@ -1,6 +1,8 @@
 from django.http import HttpResponse
 from datetime import datetime, timedelta
-from member.models import FlexiCashMember, Transaction
+from fleximembers.models import FlexiCashMember
+from loanapplication.models import MemberLoanApplication,Transaction
+from loanmanagement.models import LoanProduct,FlexiCashLoanApplication
 
 def mini_statement_handler(request, session_id, phone_number, text_parts):
     member = FlexiCashMember.objects.filter(phone=phone_number).first()
