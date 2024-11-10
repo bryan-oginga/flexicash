@@ -1,58 +1,60 @@
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from member.models import FlexiCashMember  # Assuming this is your member model
-from .ussd_handlers.registration import handle_registration
-from .ussd_handlers.apply_loan import apply_loan_handler
-from .ussd_handlers.check_balance import check_balance_handler
+from member.models import FlexiCashMember
+from ussd.ussd_handlers.registration import handle_registration
+from ussd.ussd_handlers.apply_loan import apply_loan_handler
+from ussd.ussd_handlers.repay_loan import repay_loan_handler
+from ussd.ussd_handlers.check_limit import check_limit_handler
+from ussd.ussd_handlers.mini_statement import mini_statement_handler
+from ussd import constants  # Import the constants
 
 @csrf_exempt
 def ussd_view(request):
-    if request.method == 'POST':
-        # Retrieve parameters from POST request
-        session_id = request.POST.get("sessionId", "").strip()
-        phone_number = request.POST.get("phoneNumber", "").strip()
-        text = request.POST.get("text", "").strip()
+    if request.method != 'POST':
+        return HttpResponse("Method not allowed", status=405)
 
-        # Split the input text to manage navigation
-        text_parts = text.split("*")
+    session_id = request.POST.get("sessionId", "").strip()
+    phone_number = request.POST.get("phoneNumber", "").strip()
+    text = request.POST.get("text", "").strip()
+    text_parts = text.split("*")
 
-        # Check if user is registered
-        try:
-            user = FlexiCashMember.objects.get(phone=phone_number)
-            is_registered = True
-        except FlexiCashMember.DoesNotExist:
-            is_registered = False
+    try:
+        user = FlexiCashMember.objects.get(phone=phone_number)
+        is_registered = True
+    except FlexiCashMember.DoesNotExist:
+        is_registered = False
 
-        # Routing based on registration status
-        if not is_registered:
-            # Display welcome message and options to register
-            if text == "":
-                response = "CON Welcome to FlexiCash Microfinance. Please select an option:\n1. Register"
-            else:
-                # Pass correct parameters to handle_registration
-                response = handle_registration(request, session_id, phone_number, text)  # Correct arguments
+    if not is_registered:
+        # Registration Process
+        if text == "":
+            response = constants.WELCOME_MESSAGE_NEW_USER
         else:
-            # Registered user main menu and actions
-            if text == "":
-                response = "CON Welcome back to FlexiCash.\n1. Apply for Loan\n2. Repay Loan\n3. Check Limit \n4. Request Statement\n5. Exit"
-            elif text_parts[0] == "1":  # Apply for Loan
-                # Pass the necessary arguments to the apply_loan_handler function
-                response = apply_loan_handler(request, session_id, phone_number, text)  # Loan application handler
-            elif text_parts[0] == "2":  # Repay Loan
-                response = "CON Please enter the amount you want to repay."  # Example placeholder for repayment
-            elif text_parts[0] == "3":  # Check Loan Limit
-                response = "CON Your loan limit is 50,000."  # Example placeholder for loan limit
-            elif text_parts[0] == "4":  # Request Statement
-                response = "CON Your loan statement has been sent to your registered email."  # Placeholder for statement
-            elif text_parts[0] == "5":  # Exit
-                response = "END Thank you for using FlexiCash Microfinance."
-            elif text_parts[0] == "0":  # Go Back
-                response = "CON Welcome back to FlexiCash.\n1. Apply for Loan\n2. Repay Loan\n3. Check Limit \n4. Request Statement\n5. Exit"
-            elif text_parts[0] == "00":  # Main Menu
-                response = "CON Welcome back to FlexiCash.\n1. Apply for Loan\n2. Repay Loan\n3. Check Limit \n4. Request Statement\n5. Exit"
-            else:
-                response = "END Invalid option. Please try again."
+            response = handle_registration(request, session_id, phone_number, text)
+    else:
+        # Main Menu for Registered Users
+        if text == "":
+            response = constants.WELCOME_MESSAGE_REGISTERED_USER
+        elif text_parts[0] == "1":
+            response = apply_loan_handler(request, session_id, phone_number, text)
+        elif text_parts[0] == "2":
+            # Repay Loan Options
+            response = constants.REPAYMENT_OPTIONS
+            if len(text_parts) == 2:
+                if text_parts[1] == "1":
+                    response = constants.REPAYMENT_FULL_PROMPT
+                elif text_parts[1] == "2":
+                    response = constants.REPAYMENT_PARTIAL_PROMPT
+            elif len(text_parts) == 3:
+                response = repay_loan_handler(request, session_id, phone_number, text)
+        elif text_parts[0] == "3":
+            response = check_limit_handler(request, session_id, phone_number, text)
+        elif text_parts[0] == "4":
+            response = constants.STATEMENT_PERIOD_PROMPT
+            if len(text_parts) == 2:
+                response = mini_statement_handler(request, session_id, phone_number, text)
+        elif text_parts[0] == "5":
+            response = constants.EXIT_MESSAGE
+        else:
+            response = constants.INVALID_OPTION
 
-        return HttpResponse(response, content_type='text/plain')
-
-    return HttpResponse("Method not allowed", status=405)
+    return HttpResponse(response, content_type='text/plain')

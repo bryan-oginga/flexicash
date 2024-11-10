@@ -1,68 +1,85 @@
+from decimal import Decimal
+from django.shortcuts import get_object_or_404
+from ussd import constants
+from loan.models import LoanType  # Ensure LoanType model is correctly imported
+from member.models import FlexiCashMember,MemberLoan,Transaction  # Ensure Transaction model is correctly imported
 from django.http import HttpResponse
-from loan.models import LoanType, LoanApplication
-from member.models import FlexiCashMember,MemberLoan,Transaction
+
+
+def check_member_exists(phone_number):
+    """Checks if the member exists in the database."""
+    try:
+        return FlexiCashMember.objects.get(phone=phone_number)
+    except FlexiCashMember.DoesNotExist:
+        return None
 
 def apply_loan_handler(request, session_id, phone_number, text):
-    parts = text.split('*')
-    member = FlexiCashMember.objects.filter(phone=phone_number).first()
+    """Handles the loan application process for FlexiCash members."""
+    parts = text.split("*")
+    member = check_member_exists(phone_number)
 
-    if member:
-        # If the user hasn't selected a loan type yet, show available loan types
-        if len(parts) == 1:
-            loan_types = LoanType.objects.all()
-            response = "CON Choose a loan type:\n"
-            for index, loan in enumerate(loan_types, start=1):
-                response += f"{index}. {loan.name}\n"
-            return HttpResponse(response, content_type="text/plain")
-
-        # If the user selects a loan type, ask for the loan amount
-        elif len(parts) == 2:
-            loan_type_index = int(parts[1]) - 1
-            loan_types = LoanType.objects.all()
-            if loan_type_index < len(loan_types):
-                selected_loan_type = loan_types[loan_type_index]
-                response = f"CON Enter loan amount for {selected_loan_type.name}:"
-                return HttpResponse(response, content_type="text/plain")
-
-        # After loan amount is entered, ask for PIN
-        elif len(parts) == 3:
-            loan_type_index = int(parts[1]) - 1
-            loan_types = LoanType.objects.all()
-            if loan_type_index < len(loan_types):
-                selected_loan_type = loan_types[loan_type_index]
-                requested_amount = parts[2]
-                response = f"CON Please enter your PIN to confirm loan of {requested_amount} for {selected_loan_type.name}:"
-                return HttpResponse(response, content_type="text/plain")
-        
-        # If PIN is provided, process loan application
-        elif len(parts) == 4:
-            pin = parts[3]
-            
-            # Directly compare the entered PIN with the stored PIN
-            if pin == member.pin:
-                loan_type_index = int(parts[1]) - 1
-                loan_types = LoanType.objects.all()
-                if loan_type_index < len(loan_types):
-                    selected_loan_type = loan_types[loan_type_index]
-                    requested_amount = parts[2]
-
-                    # Validate if amount is numeric
-                    if not requested_amount.isdigit():
-                        return HttpResponse("END Invalid loan amount. Please enter a numeric value.", content_type="text/plain")
-                    
-                    # Save the loan application
-                    loan_application = MemberLoan(
-                        member=member,
-                        loan_type=selected_loan_type,
-                        requested_amount=requested_amount,
-                        duration=selected_loan_type.loan_duration,  # Set loan duration; you can calculate dynamically
-                    )
-                    loan_application.save()
-
-                    response = f"END Your loan of {requested_amount} for {selected_loan_type.name} has been successfully submitted. Please wait as we process your application."
-                    return HttpResponse(response, content_type="text/plain")
-            else:
-                return HttpResponse("END Incorrect PIN. Please try again.", content_type="text/plain")
-    
-    else:
+    # If member doesn't exist, ask to register
+    if not member:
         return HttpResponse("END Member not found. Please register first.", content_type="text/plain")
+
+    # Check if the member has any pending balance (must be zero to apply for a new loan)
+    if member.balance != 0:
+        return HttpResponse("END You have a pending balance. Please repay before applying for a new loan.", content_type="text/plain")
+
+    # Step 1: Prompt user to select loan type if not already selected
+    if len(parts) == 1:
+        loan_types = LoanType.objects.all()
+        loan_options = "\n".join([f"{index+1}. {loan_type.name}" for index, loan_type in enumerate(loan_types)])
+        return HttpResponse(f"CON Select Loan Type:\n{loan_options}", content_type="text/plain")
+
+    # Step 2: Capture loan type selection
+    elif len(parts) == 2:
+        try:
+            selected_index = int(parts[1]) - 1
+            loan_types = LoanType.objects.all()
+            loan_type = loan_types[selected_index]
+        except (ValueError, IndexError):
+            return HttpResponse("END Invalid loan type selected. Please try again.", content_type="text/plain")
+        
+        # Prompt for loan amount
+        return HttpResponse(f"CON Enter loan amount for {loan_type.name}:", content_type="text/plain")
+
+    # Step 3: Enter loan amount
+    elif len(parts) == 3:
+        try:
+            requested_amount = Decimal(parts[2])
+        except ValueError:
+            return HttpResponse("END Invalid loan amount. Please enter a numeric value.", content_type="text/plain")
+
+        # Check if the requested amount is within the member's loan limit
+        if requested_amount > member.loan_limit:
+            return HttpResponse("END The requested amount exceeds your loan limit.", content_type="text/plain")
+        
+        # Prompt for PIN
+        return HttpResponse("CON Please enter your PIN to confirm the loan:", content_type="text/plain")
+
+    # Step 4: Enter PIN
+    elif len(parts) == 4:
+        pin = parts[3]
+
+        # Check if the entered PIN matches the member's stored PIN
+        if pin != member.pin:
+            return HttpResponse("END Incorrect PIN. Please try again.", content_type="text/plain")
+        
+        # Get loan type and amount from the previous inputs
+        loan_type_index = int(parts[1]) - 1
+        loan_types = LoanType.objects.all()
+        selected_loan_type = loan_types[loan_type_index]
+        requested_amount = Decimal(parts[2])
+
+        # Create loan application entry
+        MemberLoan.objects.create(
+            member=member,
+            loan_type=selected_loan_type,
+            requested_amount=requested_amount
+        )
+
+        # Clear any session or temporary data
+        return HttpResponse(f"END Your loan of {requested_amount} for {selected_loan_type.name} has been successfully submitted. We will process your application.", content_type="text/plain")
+
+    return HttpResponse("END Invalid option. Please try again.", content_type="text/plain")

@@ -1,19 +1,26 @@
 from django.contrib import admin
-from .models import LoanApplication, LoanType
+from .models import LoanType, LoanApplication
 
 class LoanApplicationAdmin(admin.ModelAdmin):
-    list_display = ('loan_id', 'interest_rate', 'loan_type', 'amount_requested', 'loan_status', 'payment_complete')
-    readonly_fields = ('interest_rate',)
+    list_display = ('loan_id', 'member', 'loan_type', 'amount_requested', 'loan_status', 'application_date', 'loan_due_date', 'total_repayment', 'payment_complete')
+    search_fields = ('loan_id', 'member__membership_number', 'loan_type__name', 'loan_status')
+    list_filter = ('loan_status', 'loan_type', 'member')
+    ordering = ['-application_date']
+    date_hierarchy = 'application_date'
 
-    def loan_id(self, obj):
-        return obj.loan_id  # Use the primary key for loan ID
-
-    def interest_rate(self, obj):
-        return obj.loan_type.interest_rate  # Fetch the interest rate from the related LoanType
-
-    def payment_complete(self, obj):
-        return "Yes" if obj.loan_balance == 0 else "No"
-
-    list_filter = ('loan_status', 'loan_type')
+    def has_change_permission(self, request, obj=None):
+        """
+        Prevent editing of loan applications that are already 'Repaid'
+        """
+        if obj and obj.loan_status == 'Repaid':
+            return False
+        return super().has_change_permission(request, obj)
 
 admin.site.register(LoanApplication, LoanApplicationAdmin)
+
+class LoanTypeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'interest_rate', 'loan_duration', 'max_loan_amount')
+    search_fields = ('name',)
+    list_filter = ('loan_duration',)
+
+admin.site.register(LoanType, LoanTypeAdmin)

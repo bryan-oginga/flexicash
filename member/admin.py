@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import FlexiCashMember, MemberLoan, Transaction
+from .models import FlexiCashMember, MemberLoan, Transaction, LoanStatement
+from loan.models import LoanType, LoanApplication
 
 class FlexiCashMemberAdmin(admin.ModelAdmin):
     list_display = ('membership_number', 'first_name', 'last_name', 'email', 'phone', 'balance')
@@ -23,3 +24,13 @@ class TransactionAdmin(admin.ModelAdmin):
     search_fields = ('loan__loan_type__name', 'member__membership_number')
 
 admin.site.register(Transaction, TransactionAdmin)
+
+
+class LoanStatementAdmin(admin.ModelAdmin):
+    list_display = ('member', 'transaction', 'amount', 'transaction_type', 'date')
+    search_fields = ('member__first_name', 'member__last_name', 'transaction_type')
+    list_filter = ('transaction_type', 'date')
+    date_hierarchy = 'date'
+    ordering = ('-date',)
+
+admin.site.register(LoanStatement, LoanStatementAdmin)

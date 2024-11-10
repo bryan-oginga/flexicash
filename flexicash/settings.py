@@ -32,6 +32,9 @@ INSTALLED_APPS = [
     
    
 ]
+# Use database-backed sessions to store session data persistently
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 3600  # Set the session timeout to 1 hour
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
