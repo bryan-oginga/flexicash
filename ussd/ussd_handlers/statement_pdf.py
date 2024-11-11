@@ -1,38 +1,89 @@
 from fpdf import FPDF
 import qrcode
 import os
+import PyPDF2
+from django.conf import settings
 
 def create_statement_pdf(member, transactions, period):
-    # Set up media directory
-    media_dir = os.path.join(os.getcwd(), 'media')
-    os.makedirs(media_dir, exist_ok=True)  # Create directory if it doesn't exist
-    
-    # Set QR code path
-    qr_img_path = os.path.join(media_dir, f'qr_{member.id}.png')
-
-    # Generate QR code
-    qr = qrcode.make(f'Statement for {member.first_name}, Period: {period}')
-    qr.save(qr_img_path)
-
-    # Create the PDF
+    # Create PDF object
     pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
-    pdf.set_font("Arial", size=12)
 
-    pdf.cell(200, 10, txt=f"Mini Statement for {member.first_name}", ln=True, align='C')
-    pdf.cell(200, 10, txt=f"Period: {period} months", ln=True, align='C')
+    # Set Title
+    pdf.set_font("Arial", 'B', 16)
+    pdf.set_text_color(0, 0, 255)  # Blue text color
+    pdf.cell(200, 10, txt=f"Mini Statement for {member.first_name} {member.last_name}", ln=True, align='C')
 
-    # Add transactions to PDF
+    # Add a Line Break
     pdf.ln(10)
-    pdf.cell(200, 10, txt="Date          Type          Amount", ln=True)
+
+    # Add Date and Period
+    pdf.set_font("Arial", size=12)
+    pdf.set_text_color(0, 0, 0)  # Black text
+    pdf.cell(200, 10, txt=f"Statement Period: {period} months", ln=True)
+    pdf.cell(200, 10, txt=f"Date: {transactions[0].date.strftime('%Y-%m-%d')}", ln=True)
+
+    # Add a Line Break
+    pdf.ln(10)
+
+    # Create Table for Transaction History
+    pdf.set_font("Arial", size=12)
+    pdf.cell(40, 10, 'Date', border=1)
+    pdf.cell(60, 10, 'Transaction Type', border=1)
+    pdf.cell(40, 10, 'Amount', border=1, align='R')
+    pdf.ln()
+
+    # Add Table Content
     for transaction in transactions:
-        pdf.cell(200, 10, txt=f"{transaction.date}   {transaction.transaction_type}    {transaction.amount}", ln=True)
+        pdf.cell(40, 10, transaction.date.strftime('%Y-%m-%d'), border=1)
+        pdf.cell(60, 10, transaction.transaction_type, border=1)
+        pdf.cell(40, 10, f'{transaction.amount}', border=1, align='R')
+        pdf.ln()
 
-    # Add QR code to PDF
-    pdf.image(qr_img_path, x=10, y=pdf.get_y() + 10, w=30)
+    # Add a Line Break
+    pdf.ln(10)
 
-    # Save the PDF
-    pdf_path = os.path.join(media_dir, f'statement_{member.id}.pdf')
-    pdf.output(pdf_path)
+    # Add Footer with Custom Message
+    pdf.set_font("Arial", 'I', 10)
+    pdf.cell(200, 10, txt="Thank you for using Flexipay! For support, contact us at support@flexipay.com", ln=True, align='C')
 
-    return pdf_path
+    # Generate QR Code
+    qr_data = f"Member: {member.first_name} {member.last_name}, Period: {period} months"
+    qr_img = qrcode.make(qr_data)
+
+    # Save the QR code image temporarily
+    qr_img_path = os.path.join(settings.MEDIA_ROOT, f'qr_{member.id}.png')
+    qr_img.save(qr_img_path)
+
+    # Add the QR code image to the PDF
+    pdf.ln(10)
+    pdf.image(qr_img_path, x=160, w=30)
+
+    # Output the PDF to a file
+    pdf_output_path = os.path.join(settings.MEDIA_ROOT, f'statement_{member.id}.pdf')
+    pdf.output(pdf_output_path)
+
+    # Delete the temporary QR code image file
+    os.remove(qr_img_path)
+
+    # Add password protection using PyPDF2
+    password = "securepassword"  # Set your desired password here
+    with open(pdf_output_path, "rb") as pdf_file:
+        reader = PyPDF2.PdfReader(pdf_file)
+        writer = PyPDF2.PdfWriter()
+        
+        # Add all pages from the reader to the writer
+        for page_num in range(len(reader.pages)):
+            writer.add_page(reader.pages[page_num])
+        
+        # Add password
+        writer.encrypt(password)
+        
+        # Save the new PDF with password protection
+        protected_pdf_output_path = pdf_output_path.replace(".pdf", "_protected.pdf")
+        with open(protected_pdf_output_path, "wb") as protected_pdf_file:
+            writer.write(protected_pdf_file)
+
+    # Return the path to the protected PDF
+    return protected_pdf_output_path
