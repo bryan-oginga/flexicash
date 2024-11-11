@@ -11,7 +11,7 @@ SECRET_KEY = 'django-insecure-50#5$pbme&ajmg%r-c2hlsec(74lqg#69o%)x24)&yj+d$365n
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['906e-41-212-64-158.ngrok-free.app','localhost','127.0.0.1',]
+ALLOWED_HOSTS = ['3b3b-41-212-64-158.ngrok-free.app','localhost','127.0.0.1',]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -126,7 +126,7 @@ EMAIL_HOST_USER = 'ogingabrian2017@gmail.com'
 EMAIL_HOST_PASSWORD =  'xtfzlyicegpxjnho' 
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-DEFAULT_FROM_EMAIL = 'Sendify Team <noreply@sendify.com>'
+DEFAULT_FROM_EMAIL = 'Flexipay Team <noreply@sendify.com>'
 
 
 

@@ -39,14 +39,13 @@ def ussd_view(request):
         elif text_parts[0] == "1":
             response = apply_loan_handler(request, session_id, phone_number, text)
         elif text_parts[0] == "2":
-            # User selects "Repay Loan" (We delegate further logic to repay_loan_handler)
+            # User selects "Repay Loan"
             response = repay_loan_handler(request, session_id, phone_number, text)
         elif text_parts[0] == "3":
             response = check_limit_handler(request, session_id, phone_number, text)
         elif text_parts[0] == "4":
-            response = constants.STATEMENT_PERIOD_PROMPT
-            if len(text_parts) == 2:
-                response = mini_statement_handler(request, session_id, phone_number, text)
+            # User selects "Request Mini Statement"
+            response = mini_statement_handler(request, session_id, phone_number, text)
         elif text_parts[0] == "5":
             response = constants.EXIT_MESSAGE
         else:

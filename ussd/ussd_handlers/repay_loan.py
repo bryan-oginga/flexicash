@@ -2,6 +2,7 @@ from django.http import HttpResponse
 from fleximembers.models import FlexiCashMember
 from loanapplication.models import MemberLoanApplication, Transaction
 from decimal import Decimal
+from django.utils import timezone
 
 def repay_loan_handler(request, session_id, phone_number, text):
     parts = text.split('*')

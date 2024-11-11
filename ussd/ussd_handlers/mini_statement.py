@@ -1,44 +1,27 @@
 from django.http import HttpResponse
-from datetime import datetime, timedelta
+from .statement_logic import get_transactions
+from .statement_pdf import create_statement_pdf
+from .send_email import send_statement_email
 from fleximembers.models import FlexiCashMember
-from loanapplication.models import MemberLoanApplication,Transaction
-from loanmanagement.models import LoanProduct,FlexiCashLoanApplication
 
-def mini_statement_handler(request, session_id, phone_number, text_parts):
-    member = FlexiCashMember.objects.filter(phone=phone_number).first()
-    if not member:
-        return HttpResponse("END Member not found. Please register first.", content_type="text/plain")
-    
-    # Check if a period was specified
-    if len(text_parts) < 2:
-        return HttpResponse("END Invalid selection. Please try again.", content_type="text/plain")
-    
-    # Determine the selected period
-    option = text_parts[1]
-    if option == "1":
-        period = datetime.now() - timedelta(days=30)  # 1 Month
-    elif option == "2":
-        period = datetime.now() - timedelta(days=90)  # 3 Months
-    elif option == "3":
-        period = datetime.now() - timedelta(days=180)  # 6 Months
-    elif option == "4":
-        period = datetime.now() - timedelta(days=365)  # 1 Year
+def mini_statement_handler(request, session_id, phone_number, text):
+    text_parts = text.split("*")
+
+    if len(text_parts) == 1:
+        return HttpResponse("CON Choose statement period:\n1. 1 month\n2. 3 months\n3. 6 months\n4. 12 months")
+
+    try:
+        member = FlexiCashMember.objects.get(phone=phone_number)
+    except FlexiCashMember.DoesNotExist:
+        return HttpResponse("END Member not found. Please register first.")
+
+    period_options = {"1": 1, "2": 3, "3": 6, "4": 12}
+    period = period_options.get(text_parts[1])
+
+    if period:
+        transactions = get_transactions(member, period)
+        pdf_path = create_statement_pdf(member, transactions, period)
+        send_statement_email(member.email, pdf_path)
+        return HttpResponse("END Your mini-statement has been sent to your email.")
     else:
-        return HttpResponse("END Invalid option. Please try again.", content_type="text/plain")
-    
-    # Retrieve transactions within the specified period
-    transactions = Transaction.objects.filter(member=member, date__gte=period).order_by('-date')[:5]  # Limit to 5 recent transactions for brevity
-    
-    if not transactions:
-        response = "END No transactions found for the selected period."
-    else:
-        # Format the mini statement response
-        response = "END Mini Statement:\n"
-        for txn in transactions:
-            txn_type = txn.transaction_type
-            amount = txn.amount
-            date = txn.date.strftime('%d %b %Y')
-            response += f"{txn_type} - {amount} on {date}\n"
-        response += "\nThank you for using FlexiCash."
-    
-    return HttpResponse(response, content_type="text/plain")
+        return HttpResponse("END Invalid option.")

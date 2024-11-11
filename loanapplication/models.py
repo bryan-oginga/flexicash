@@ -7,6 +7,7 @@ import logging
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from decimal import Decimal
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +56,12 @@ class Transaction(models.Model):
     loan = models.ForeignKey(MemberLoanApplication, on_delete=models.CASCADE, related_name="transactions")
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     transaction_type = models.CharField(max_length=15,default="Repayment")
-    date = models.DateTimeField(auto_now_add=True)
+    date = models.DateTimeField(default=timezone.now)
+    
+    def save(self, *args, **kwargs):
+        if not self.date.tzinfo:
+            self.date = timezone.make_aware(self.date, timezone.get_current_timezone())
+        super(Transaction, self).save(*args, **kwargs)
 
     def __str__(self):
         return f"Loan: {self.transaction_type} of {self.amount} on {self.date} for {self.member}"
