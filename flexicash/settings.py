@@ -25,7 +25,7 @@ INSTALLED_APPS = [
     
     'ussd',
     'accounts',
-    'report',
+    'reports',
     'fleximembers',
     'loanapplication',
     'loanmanagement',
