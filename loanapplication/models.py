@@ -56,6 +56,8 @@ class Transaction(models.Model):
     loan = models.ForeignKey(MemberLoanApplication, on_delete=models.CASCADE, related_name="transactions")
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     transaction_type = models.CharField(max_length=15,default="Repayment")
+    narrative = models.CharField(max_length=15,null=True,blank=True)
+    status = models.CharField(max_length=20, choices=[('PENDING', 'Pending'), ('COMPLETED', 'Completed'), ('FAILED', 'Failed')], default='PENDING')
     date = models.DateTimeField(default=timezone.now)
     
     def save(self, *args, **kwargs):

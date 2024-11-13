@@ -31,6 +31,11 @@ INSTALLED_APPS = [
     'loanmanagement',
     'lipanampesa',
     
+    'rest_framework',
+    'phonenumber_field',
+
+
+    
    
 ]
 # Use database-backed sessions to store session data persistently
@@ -78,9 +83,6 @@ DATABASES = {
 
 # settings.py
 
-
-
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -120,6 +122,15 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
+SHORTCODE = '174379'
+MPESA_PASSKEY = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
+CONSUMER_KEY = "WumSttSJpeqk2HONJJtTg0w1oRaPVwQZF22HpRI8VAbVZx5K"
+CONSUMER_SECRET = "MEtFVM2mp9O2WKAT8GBI3IKA6Vn88AJ7nytMgTblsw9RJtT1WwGcllftp0uGjehH"
+ACCESS_TOKEN_URL = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
+API_URL = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
+CALL_BACK_URL = "https://3b3b-41-212-64-158.ngrok-free.app/lipanampesa/api/callback/"
+
+
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend' 
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = 'ogingabrian2017@gmail.com'
@@ -127,6 +138,7 @@ EMAIL_HOST_PASSWORD =  'xtfzlyicegpxjnho'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = 'Flexipay Team <noreply@sendify.com>'
+
 
 
 
