@@ -1,12 +1,12 @@
+# urls.py
 from django.urls import path
-from .views import (lipa_na_mpesa_express)
-
+from . import views
 
 app_name = 'payment'
 
 urlpatterns = [
-    path('express/',lipa_na_mpesa_express,name='express'),
-    # path('token/',getAccessToken,name='access_token'),
+    path('', views.mpesa_payment, name='payment'),
+    path('initiate/', views.initiate_stk_push, name='initiate_payment'),
 
-  
+
 ]

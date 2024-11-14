@@ -2,23 +2,22 @@ from django.db import models
 from django.utils import timezone
 
 # Create your models here.
-class MpesaTransaction(models.Model):
-    CheckoutRequestID = models.CharField(max_length=50, blank=True, null=True)
-    MerchantRequestID = models.CharField(max_length=20, blank=True, null=True)
-    ResultCode = models.IntegerField(blank=True, null=True)
-    ResultDesc = models.CharField(max_length=120, blank=True, null=True)
-    Amount = models.FloatField(blank=True, null=True)
-    MpesaReceiptNumber = models.CharField(max_length=15, blank=True, null=True)
-    TransactionDate = models.DateTimeField(blank=True, null=True)
-    PhoneNumber = models.CharField(max_length=13, blank=True, null=True)
-    
-    
-    def save(self, *args, **kwargs):
-        if not self.TransactionDate.tzinfo:
-            self.TransactionDate = timezone.make_aware(self.date, timezone.get_current_timezone())
-        super(MpesaTransaction, self).save(*args, **kwargs)
+from django.db import models
 
+from django.db import models
+
+class LoanMpesaTransaction(models.Model):
+    invoice_id = models.CharField(max_length=100, unique=True,blank=True)  # Unique invoice ID from IntaSend
+    phone_number = models.CharField(max_length=20,unique=True,blank=True)  # Customer phone number
+    email = models.EmailField()  # Customer email
+    amount = models.DecimalField(max_digits=10, decimal_places=2,null=True,blank=True)  # Amount for the payment
+    narrative = models.CharField(max_length=255,null=True,blank=True)  # Narrative for the payment
+    state = models.CharField(max_length=20, default='PENDING')  # The state of the invoice (e.g., "PENDING", "COMPLETED")
+    created_at = models.DateTimeField(default=timezone.now())
+    
     def __str__(self):
-        return f"Loan: {self.MpesaReceiptNumber} of {self.Amount} on {self.TransactionDate} "
-    
+        # Combine both loan and invoice information in a clear representation
+        return f"Loan of {self.amount} KES for {self.phone_number} (Invoice ID: {self.invoice_id}, State: {self.state})"
 
+
+  

@@ -1,0 +1,17 @@
+<!-- initiate_payment.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Initiate Payment</title>
+</head>
+<body>
+    <h1>Initiate Payment with M-Pesa</h1>
+    <form method="post" action="{% url 'payment:initiate_payment' %}">
+        {% csrf_token %}
+      
+
+        <button type="submit">Pay with M-Pesa</button>
+    </form>
+</body>
+</html>

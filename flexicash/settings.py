@@ -1,17 +1,10 @@
 import os
-
 from pathlib import Path
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-50#5$pbme&ajmg%r-c2hlsec(74lqg#69o%)x24)&yj+d$365n'
-
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['3b3b-41-212-64-158.ngrok-free.app','localhost','127.0.0.1',]
+ALLOWED_HOSTS = ['9a7d-41-212-64-158.ngrok-free.app','localhost','127.0.0.1',]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -20,9 +13,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
-
-    
+     
     'ussd',
     'accounts',
     'reports',
@@ -33,12 +24,8 @@ INSTALLED_APPS = [
     
     'rest_framework',
     'phonenumber_field',
-
-
-    
    
 ]
-# Use database-backed sessions to store session data persistently
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_AGE = 3600  # Set the session timeout to 1 hour
 
@@ -81,7 +68,6 @@ DATABASES = {
     }
 }
 
-# settings.py
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -99,20 +85,14 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
-
 TIME_ZONE = 'Africa/Nairobi'
 
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 USE_THOUSAND_SEPARATOR = True
 
 STATIC_URL = '/static/'
@@ -121,14 +101,6 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'staticfiles')]
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-
-SHORTCODE = '174379'
-MPESA_PASSKEY = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
-CONSUMER_KEY = "WumSttSJpeqk2HONJJtTg0w1oRaPVwQZF22HpRI8VAbVZx5K"
-CONSUMER_SECRET = "MEtFVM2mp9O2WKAT8GBI3IKA6Vn88AJ7nytMgTblsw9RJtT1WwGcllftp0uGjehH"
-ACCESS_TOKEN_URL = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
-API_URL = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
-CALL_BACK_URL = "https://3b3b-41-212-64-158.ngrok-free.app/lipanampesa/api/callback/"
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend' 
@@ -139,7 +111,8 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = 'Flexipay Team <noreply@sendify.com>'
 
-
+INSTASEND_PUBLISHABLE_KEY = 'ISPubKey_test_7c58de8a-2340-4b9d-af0e-1d2b479086c2'
+INSTASEND_SECRET_KEY = 'ISSecretKey_test_5dcdc514-4afb-4b83-89fa-8cc6d48a3f78'
 
 
 CORS_REPLACE_HTTPS_REFERER      = False
@@ -151,3 +124,15 @@ CSRF_COOKIE_SECURE              = False
 SECURE_HSTS_SECONDS             = None
 SECURE_HSTS_INCLUDE_SUBDOMAINS  = False
 SECURE_FRAME_DENY               = False
+
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Redis as the message broker
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'  # Redis as the result backend
+
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+
+CELERY_TASK_TIME_LIMIT = 30 * 60  # Maximum time a task can run (30 minutes)
+CELERY_TASK_SOFT_TIME_LIMIT = 30 * 60  # Time before forcefully terminating the task
+
