@@ -10,7 +10,7 @@ class FlexiCashMember(models.Model):
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=15, unique=True)
     pin = models.CharField(max_length=10)
-    balance = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    member_balance = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
     membership_number = models.CharField(max_length=50, unique=True, blank=True, null=True)
     loan_limit = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('500.00'))
     credit_score = models.IntegerField(default=50)

@@ -14,7 +14,7 @@ def update_member_loan_status(sender, instance, **kwargs):
         member_loan_application = MemberLoanApplication.objects.get(
             member=instance.member, 
             loan_product=instance.loan_product, 
-            requested_amount=instance.requested_amount
+            principal_amount=instance.principal_amount
         )
     except MemberLoanApplication.DoesNotExist:
         return  # Exit if no matching MemberLoanApplication is found
@@ -42,10 +42,18 @@ def update_member_loan_status(sender, instance, **kwargs):
 @receiver(post_save, sender=FlexiCashLoanApplication)
 def update_member_balance_on_disbursement(sender, instance, **kwargs):
     # Check if the loan status is "Disbursed" and approval date is set
-    if instance.loan_status == "Disbursed" and instance.approval_date:
+    if instance.loan_status == "Disbursed":
         # Get the related member
         member = instance.member
 
         # Update the member's balance with the loan's total repayment amount
-        member.balance += instance.total_repayment
+        member.member_balance += instance.total_repayment
         member.save()
+        
+@receiver(post_save,sender=FlexiCashLoanApplication)
+def update_loanapplication_balance(sender, instance,**kwargs):
+    if instance.loan_status == "Disbursed":
+        member = instance.member
+        
+        
+       

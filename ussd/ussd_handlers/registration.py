@@ -83,7 +83,7 @@ def handle_registration(request, session_id, phone_number, text):
                         email=email,
                         phone=normalized_phone,
                         pin=pin,
-                        balance=0.00  # Explicitly setting the balance
+                        member_balance=0.00  # Explicitly setting the balance
                     )
                     member.save()
                     response = "END Registration successful! You can now use FlexiCash services."

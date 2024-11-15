@@ -44,15 +44,17 @@ class FlexiCashLoanApplication(models.Model):
     loan_id = models.CharField(max_length=15, unique=True, blank=True, null=True)
     member = models.ForeignKey(FlexiCashMember, on_delete=models.CASCADE, related_name="loan_applications")
     loan_product = models.ForeignKey(LoanProduct, on_delete=models.PROTECT, related_name="loan_applications")
-    requested_amount = models.DecimalField(max_digits=10, decimal_places=2)  # Loan amount requested
+    principal_amount = models.DecimalField(max_digits=10, decimal_places=2)  # Loan amount requested
     loan_status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='Pending')
     application_date = models.DateTimeField(auto_now_add=True)
     approval_date = models.DateTimeField(null=True, blank=True)
     loan_due_date = models.DateField(null=True, blank=True)
     interest_rate = models.DecimalField(max_digits=5, decimal_places=2)  # Percentage
-    interest_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    loan_yield = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     total_repayment = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    loan_profit = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    outstanding_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    loan_penalty = models.DecimalField(default=0.00,null=True,blank=True,decimal_places=2,max_digits=10)
+
     
     def save(self, *args, **kwargs):
         if not self.loan_id:
@@ -67,6 +69,6 @@ class FlexiCashLoanApplication(models.Model):
         return f"Loan Application {self.loan_id} - {self.loan_product.name} for {self.member}"
 
     class Meta:
-        verbose_name = "FlexiCash Loan Application"
-        verbose_name_plural = "FlexiCash Loan Applications"
+        verbose_name = "Manage Loan Application"
+        verbose_name_plural = "Manage Loan Applications"
         ordering = ['-application_date']

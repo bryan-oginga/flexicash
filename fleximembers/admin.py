@@ -7,7 +7,7 @@ class FlexiCashMemberAdmin(admin.ModelAdmin):
     # Display fields in the list view for quick access
     list_display = (
         'membership_number', 'first_name', 'last_name', 
-        'email', 'phone', 'credit_score', 'loan_limit', 'balance'
+        'email', 'phone', 'credit_score', 'loan_limit', 'member_balance'
     )
     
     # Allow search and filtering for faster member lookup
@@ -20,7 +20,7 @@ class FlexiCashMemberAdmin(admin.ModelAdmin):
             'fields': ('first_name', 'last_name', 'email', 'phone', 'pin')
         }),
         ('Account Details', {
-            'fields': ('membership_number', 'balance', 'loan_limit', 'credit_score')
+            'fields': ('membership_number', 'member_balance', 'loan_limit', 'credit_score')
         }),
     )
     

@@ -26,8 +26,11 @@ def apply_loan_handler(request, session_id, phone_number, text):
         return HttpResponse("END Member not found. Please register first.", content_type="text/plain")
 
     # Check if the member has any pending balance (must be zero to apply for a new loan)
-    if member.balance > 0:
+    if member.member_balance > 0:
         return HttpResponse("END You have a pending balance. Please repay before applying for a new loan.", content_type="text/plain")
+    pending_application = MemberLoanApplication.objects.filter(loan_status='Pending',member=member)
+    if pending_application.exists():
+        return HttpResponse("END You have a pending loan application.Please try wait", content_type="text/plain")
 
     # Step 1: Prompt user to select loan type if not already selected
     if len(parts) == 1:
@@ -50,13 +53,15 @@ def apply_loan_handler(request, session_id, phone_number, text):
     # Step 3: Enter loan amount
     elif len(parts) == 3:
         try:
-            requested_amount = Decimal(parts[2])
+            principal_amount = Decimal(parts[2])
         except ValueError:
             return HttpResponse("END Invalid loan amount. Please enter a numeric value.", content_type="text/plain")
 
         # Check if the requested amount is within the member's loan limit
-        if requested_amount > member.loan_limit:
+        if principal_amount > member.loan_limit:
             return HttpResponse("END The requested amount exceeds your loan limit.", content_type="text/plain")
+        
+        #check if the member has no penidng application\
         
         # Prompt for PIN
         return HttpResponse("CON Please enter your PIN to confirm the loan:", content_type="text/plain")
@@ -73,16 +78,16 @@ def apply_loan_handler(request, session_id, phone_number, text):
         loan_product_index = int(parts[1]) - 1
         loan_products = LoanProduct.objects.all()
         selected_loan_product = loan_products[loan_product_index]
-        requested_amount = Decimal(parts[2])
+        principal_amount = Decimal(parts[2])
 
         # Create loan application entry
         MemberLoanApplication.objects.create(
             member=member,
             loan_product=selected_loan_product,
-            requested_amount=requested_amount
+            principal_amount=principal_amount
         )
 
         # Clear any session or temporary data
-        return HttpResponse(f"END Your loan of {requested_amount} for {selected_loan_product.name} has been successfully submitted. We will process your application.", content_type="text/plain")
+        return HttpResponse(f"END Your loan of {principal_amount} for {selected_loan_product.name} has been successfully submitted. We will process your application.", content_type="text/plain")
 
     return HttpResponse("END Invalid option. Please try again.", content_type="text/plain")

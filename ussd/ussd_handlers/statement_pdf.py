@@ -1,83 +1,60 @@
+# statement_pdf.py
+from .statement_logic import generate_qr_code, calculate_balance
 from weasyprint import HTML, CSS
-import PyPDF2
-import os
 from django.template.loader import render_to_string
+import os
+import PyPDF2
 from django.conf import settings
-from .statement_logic import generate_qr_code  # Assuming QR code generation is in statement_logic
 
 def create_statement_pdf(member, transactions, period, request):
-    # Calculate total amount paid and final loan balance
-    total_paid = sum(transaction.amount for transaction in transactions if transaction.transaction_type == 'Repayment')
+    # Retrieve an active loan to include in the statement
+    active_loan = member.loans.filter(loan_status__in=["Disbursed", "Approved"]).first()
+    if not active_loan:
+        raise ValueError("No active loan found for the member.")
 
-    # Generate the QR code for authenticity
+    # Calculate the loan balance based on transactions
+    current_balance = calculate_balance(transactions)
+
+    # Generate QR code for the statement
     qr_image_path = generate_qr_code(member, period)
 
-    # Generate the HTML content
+    # Generate HTML content for the PDF
     html_content = render_to_string('mini_statement.html', {
         'member': member,
         'transactions': transactions,
         'period': period,
         'date': transactions[0].date.strftime('%Y-%m-%d') if transactions else "",
-        'qr_image_path': qr_image_path,
-        'loan_id': transactions[0].loan.id if transactions else "",
-        'loan_type': transactions[0].loan.loan_product.name if transactions else "",  # Corrected line
+        'qr_image_path': qr_image_path,  # Path to QR code image
+        'loan_id': active_loan.application_id,
+        'loan_type': active_loan.loan_product.name,
         'member_id': member.membership_number,
-        'total_paid': total_paid,
+        'total_paid': sum(t.amount for t in transactions if t.transaction_type == 'Repayment'),
+        'current_balance': current_balance,  # Display current balance in PDF
     })
 
-    # Define A4 page size, reduced margins, and table styling
+    # Define CSS for PDF styling
     css = CSS(string=''' 
-        @page {
-            size: A4 portrait;
-            margin: 3mm 5mm; /* Narrow margins */
-        }
-        body {
-            font-size: 10px;
-            font-family: Arial, sans-serif;
-        }
-        .header, .footer {
-            text-align: center;
-            font-weight: bold;
-        }
-        .qr-code {
-            width: 100px;
-            height: 100px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        table, th, td {
-            border: 1px solid #ddd;
-            padding: 4px;
-            text-align: center;
-        }
-        .summary {
-            text-align: right;
-            font-weight: bold;
-        }
+        @page { size: A4 portrait; margin: 1mm 3mm; }
+        body { font-size: 10px; font-family: Arial, sans-serif; }
+        .qr-code { width: 100px; height: 100px; }
     ''')
 
-    # Define the PDF output path
+    # Output paths and password protection setup
     pdf_output_path = os.path.join(settings.MEDIA_ROOT, f'statement_{member.id}.pdf')
-
-    # Generate the PDF with specified CSS
     HTML(string=html_content, base_url=request.build_absolute_uri()).write_pdf(pdf_output_path, stylesheets=[css])
 
-    # Generate a password based on member ID and initials
+    # Password generation (using member's details)
     password = f"{member.membership_number}{member.first_name[0]}{member.last_name[0]}".upper()
 
-    # Add password protection using PyPDF2
+    # Encrypt PDF for protection
     with open(pdf_output_path, "rb") as pdf_file:
         reader = PyPDF2.PdfReader(pdf_file)
         writer = PyPDF2.PdfWriter()
-
-        for page_num in range(len(reader.pages)):
-            writer.add_page(reader.pages[page_num])
-
+        for page in reader.pages:
+            writer.add_page(page)
         writer.encrypt(password)
-
+        
+        # Save the protected PDF
         protected_pdf_output_path = pdf_output_path.replace(".pdf", "_protected.pdf")
         with open(protected_pdf_output_path, "wb") as protected_pdf_file:
             writer.write(protected_pdf_file)

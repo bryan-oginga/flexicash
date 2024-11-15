@@ -1,29 +1,27 @@
 {% load static %}
 <!DOCTYPE html>
 <html class="no-js" lang="en">
-
 <head>
   <!-- Meta Tags -->
   <meta charset="utf-8">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="author" content="ThemeMarch">
   <!-- Site Title -->
-  <title>Medical Invoice</title>
+  <title>Flexicash</title>
   <link rel="stylesheet" href="{{ base_url }}{% static 'sassets/css/style.css' %}">
 </head>
 
 <body>
-   <div class="cs-container">
+  <div class="cs-container">
     <div class="cs-invoice cs-style1">
       <div class="cs-invoice_in" id="download_section">
         <div class="cs-invoice_head cs-type1 cs-mb25">
           <div class="cs-invoice_left">
-            <div class="cs-logo cs-mb5"><img src="" alt="Logo"></div>
+            <div class="cs-logo cs-mb5"><img src="{{ qr_image_path }}" alt="Logo"></div>
             <p class="cs-invoice_number cs-primary_color cs-mb0 cs-f16"><b class="cs-primary_color">REF N0:</b> #{{loan_id}}</p>
           </div>
           <div class="cs-invoice_right cs-text_right">
-            <div class="cs-logo cs-mb5"><img src="assets/img/logo.png" alt="Logo"></div>
+            <div class="cs-logo cs-mb5"><img src="{{ base_url }}{% static 'sassets/img/logo.png' %}" alt="Logo"></div>
             <p  style="color:#BE3290" class="cs-invoice_number  cs-mb0 cs-f16"><b >FLEXICASH</b> </p>
 
           </div>
@@ -47,10 +45,10 @@
         <div class="cs-heading cs-style1 cs-f18 cs-primary_color cs-mb25 cs-semi_bold">Member Information</div>
         <ul class="cs-grid_row cs-col_3 cs-mb5">
           <li>
-            <p class="cs-mb20"><b class="cs-primary_color">MEMBER NAME</b> <br><span class="cs-primary_color">{{member.first_name}} {{member.last_name}} </span></p>
+            <p class="cs-mb20"><b class="cs-primary_color">MEMBER NAME</b> <br><span class="cs-primary_color">{{member.first_name}} {{member.last_name}}</span></p>
           </li>
           <li>
-            <p class="cs-mb20"><b class="cs-primary_color">MEMBERSHIP ID</b> <br><span class="cs-primary_color">{{member.membership_number}}</span></p>
+            <p class="cs-mb20"><b class="cs-primary_color">MEMBERSHIP ID</b> <br><span class="cs-primary_color">{{member_id}}</span></p>
           
           </li>
           <li>
@@ -69,18 +67,18 @@
                     <th class="cs-width_2 cs-semi_bold cs-primary_color">Date</th>
                     <th class="cs-width_6 cs-semi_bold cs-primary_color">Description</th>
                     <th class="cs-width_2 cs-semi_bold cs-primary_color cs-text_right">Amount</th>
+                    <th class="cs-width_2 cs-semi_bold cs-primary_color cs-text_right">Balance</th>
                   </tr>
                 </thead>
                 <tbody>
-                
-                  {% for transaction in transactions %}
+                {% for transaction in transactions %}
                   <tr>
-                    <td class="cs-width_2">{{transaction.date}}</td>
-                    <td class="cs-width_5">{{transaction.loan_type}}</td>
-                    <td class="cs-width_4 cs-text_right cs-primary_color">KES {{transtcion}}</td>
+                    <td class="cs-width_2">{{ transaction.date|date:"d/m/Y" }}</td>
+                    <td class="cs-width_5">{{ transaction.transaction_type }}</td>
+                    <td class="cs-width_4 cs-text_right cs-primary_color"> {{ transaction.amount }}</td>
+                    <td class="cs-width_4 cs-text_right cs-primary_color"> {{current_balance}}</td>
                   </tr>
-                  {% endfor %}
-                
+                {% endfor %}
                 </tbody>
               </table>
             </div>
@@ -92,16 +90,16 @@
               <tbody>
                 <tr class="cs-table_baseline">
                   <td class="cs-width_5">
-                    <b class="cs-primary_color">Loan Status</b><br/>
-                    Active <br/>
+                    <b class="cs-primary_color"></b><br/>
+                     <br/>
                   </td>
                   <td class="cs-width_5 cs-text_right">
-                    <p class="cs-mb5 cs-mb5 cs-f15 cs-primary_color cs-semi_bold">Total Paid:</p>
-                    <p class="cs-primary_color cs-bold cs-f16 cs-m0"> Balance:</p>
+                    <p class="cs-mb5 cs-mb5 cs-f15 cs-primary_color cs-semi_bold"> Paid:</p>
+                    <p class="cs-mb5 cs-mb5 cs-f15 cs-primary_color cs-semi_bold"> Balance:</p>
                   </td>
                   <td class="cs-width_2 cs-text_rightcs-f16">
-                    <p class="cs-mb5 cs-mb5 cs-text_right cs-f15 cs-primary_color cs-semi_bold">KES {{total_paid}}</p>
-                    <p class="cs-primary_color cs-bold cs-f16 cs-m0 cs-text_right">KES {{total_paid}}</p>
+                    <p class="cs-mb5 cs-mb5 cs-text_right cs-f15 cs-primary_color cs-semi_bold"> {{total_paid}}</p>
+                    <p class="cs-mb5 cs-mb5 cs-text_right cs-f15 cs-primary_color cs-semi_bold"> {{current_balance}}</p>
                   </td>
                 </tr>
               </tbody>
@@ -112,9 +110,6 @@
       
     </div>
   </div>
-  <script src="{{ base_url }}{% static 'sassets/js/jquery.min.js' %}"></script>
-  <script src="{{ base_url }}{% static 'sassets/js/jspdf.min.js' %}"></script>
-  <script src="{{ base_url }}{% static 'sassets/js/html2canvas.min.js' %}"></script>
-  <script src="{{ base_url }}{% static 'sassets/js/main.js' %}"></script>
+  
 </body>
 </html>

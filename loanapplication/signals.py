@@ -19,15 +19,15 @@ def populate_loan_details(sender, instance, **kwargs):
         instance.interest_rate = loan_product.interest_rate
         
         # Calculate interest and total repayment
-        instance.interest_amount = instance.requested_amount * (instance.interest_rate / Decimal(100))
-        instance.total_repayment = (instance.requested_amount + instance.interest_amount).quantize(Decimal("0.01"))
+        instance.loan_yield = instance.principal_amount * (instance.interest_rate / Decimal(100))
+        instance.total_repayment = (instance.principal_amount + instance.loan_yield).quantize(Decimal("0.01"))
         
         # Set the due date based on the loan duration
         instance.due_date = timezone.now().date() + timezone.timedelta(days=loan_product.loan_duration)
 
         # Optionally, you can also populate other fields based on your business logic
         # For example, set the loan balance to the requested amount when the loan is first applied
-        instance.loan_balance = instance.requested_amount
+        instance.loan_balance = instance.principal_amount
 
     else:
         # If for some reason there's no loan product, set default values or raise an error
@@ -36,6 +36,8 @@ def populate_loan_details(sender, instance, **kwargs):
         instance.total_repayment = Decimal('0.00')
         instance.due_date = None
         instance.loan_balance = Decimal('0.00')
+        
+        
 
 
 
@@ -46,16 +48,16 @@ def create_flexicash_loan_application(sender, instance, created, **kwargs):
         # Extract data from the MemberLoanApplication instance
         member = instance.member
         loan_product = instance.loan_product
-        requested_amount = instance.requested_amount
+        principal_amount = instance.principal_amount
         
         # Calculate the interest and total repayment
         interest_rate = loan_product.interest_rate
-        interest_amount = (requested_amount * interest_rate / Decimal(100)).quantize(Decimal("0.01"))
-        total_repayment = (requested_amount + interest_amount).quantize(Decimal("0.01"))
+        loan_yield = (principal_amount * interest_rate / Decimal(100)).quantize(Decimal("0.01"))
+        total_repayment = (principal_amount + loan_yield).quantize(Decimal("0.01"))
         
         # Calculate loan due date
         due_date = timezone.now().date() + timedelta(days=loan_product.loan_duration)
-        
+        outstanding_balance = instance.outstanding_balance
         # Generate loan ID (ensure uniqueness)
         loan_id = f"FLN-{instance.pk:05}" if instance.pk else f"FLN-{FlexiCashLoanApplication.objects.count() + 1:05}"
         
@@ -63,15 +65,17 @@ def create_flexicash_loan_application(sender, instance, created, **kwargs):
         loan_application = FlexiCashLoanApplication(
             member=member,
             loan_product=loan_product,
-            requested_amount=requested_amount,
+            principal_amount=principal_amount,
             interest_rate=interest_rate,
-            interest_amount=interest_amount,
+            loan_yield=loan_yield,
             total_repayment=total_repayment,
             loan_status='Pending',  # Loan starts in 'Pending' status
-            loan_profit=interest_amount,
             loan_due_date=due_date,
-            loan_id=loan_id
+            loan_id=loan_id,
+            outstanding_balance = outstanding_balance 
         )
+     
+    
         
         # Save the FlexiCashLoanApplication instance
         loan_application.save()
@@ -80,6 +84,28 @@ def create_flexicash_loan_application(sender, instance, created, **kwargs):
         print(f"FlexiCashLoanApplication created: {loan_application.loan_id}")
         
         
+# @receiver(post_save, sender=Transaction)
+# def handle_loan_repayment(sender, instance, created, **kwargs):
+#     if created and instance.transaction_type == 'Repayment':
+#         member = instance.member
+#         loan = instance.loan
+
+#         # Update Member's balance by subtracting repayment amount
+#         member.balance -= instance.amount
+#         member.save()
+
+#         # Update loan balance in MemberLoanApplication
+#         loan.loan_balance -= instance.amount
+#         if loan.loan_balance <= Decimal('0.00'):
+#             loan.loan_balance = Decimal('0.00')
+#             loan.payment_complete = True  # Set to True if fully repaid
+#             # Close the FlexiCashLoanApplication status if fully repaid
+#             flexi_loan = FlexiCashLoanApplication.objects.filter(member=member, loan_product=loan.loan_product).first()
+#             if flexi_loan:
+#                 flexi_loan.loan_status = 'Closed'
+#                 flexi_loan.save()
+#         loan.save()
+
 @receiver(post_save, sender=Transaction)
 def handle_loan_repayment(sender, instance, created, **kwargs):
     if created and instance.transaction_type == 'Repayment':
@@ -101,3 +127,4 @@ def handle_loan_repayment(sender, instance, created, **kwargs):
                 flexi_loan.loan_status = 'Closed'
                 flexi_loan.save()
         loan.save()
+        
