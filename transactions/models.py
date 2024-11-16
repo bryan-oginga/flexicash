@@ -8,7 +8,7 @@ class Transaction(models.Model):
     member = models.ForeignKey(FlexiCashMember, on_delete=models.CASCADE, related_name="transactions")
     loan = models.ForeignKey(MemberLoanApplication, on_delete=models.CASCADE, related_name="transactions")
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    transaction_type = models.CharField(max_length=15,default="Repayment")
+    transaction_type = models.CharField(max_length=15,choices=[('Repayment', 'Repayment'), ('Disbursemnt', 'Disbursemnt')],default="Repayment")
     narrative = models.CharField(max_length=15,null=True,blank=True)
     status = models.CharField(max_length=20, choices=[('PENDING', 'Pending'), ('COMPLETED', 'Completed'), ('FAILED', 'Failed')], default='PENDING')
     date = models.DateTimeField(auto_now_add=True)

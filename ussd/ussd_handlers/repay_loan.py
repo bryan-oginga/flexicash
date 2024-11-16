@@ -3,7 +3,7 @@ from fleximembers.models import FlexiCashMember
 from loanapplication.models import MemberLoanApplication
 from transactions.models import Transaction
 from decimal import Decimal
-from lipanampesa.utils import initiate_stk_push  # Import the function to trigger STK Push
+# from lipanampesa.utils import initiate_stk_push  # Import the function to trigger STK Push
 from django.utils import timezone
 import logging
 

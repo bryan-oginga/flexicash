@@ -24,14 +24,14 @@ def populate_loan_details(sender, instance, **kwargs):
         instance.total_repayment = (instance.principal_amount + instance.loan_yield).quantize(Decimal("0.01"))
         
 
-        instance.loan_balance = instance.principal_amount
+        # instance.loan_balance = instance.principal_amount
 
     else:
         # If for some reason there's no loan product, set default values or raise an error
         instance.loan_product = None
         instance.interest_rate = Decimal('0.00')
         instance.total_repayment = Decimal('0.00')
-        instance.loan_balance = Decimal('0.00')
+        # instance.loan_balance = Decimal('0.00')
         
         
 @receiver(post_save, sender=MemberLoanApplication)

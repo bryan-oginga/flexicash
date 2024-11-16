@@ -49,8 +49,9 @@ def update_member_balance_on_disbursement(sender, instance, **kwargs):
         member = instance.member
 
         # Update the member's balance with the loan's total repayment amount
-        member.member_balance += instance.total_repayment
-        member.save()
+        if member.member_balance != instance.total_repayment:
+            member.member_balance = instance.total_repayment
+            member.save()
         
         
         
