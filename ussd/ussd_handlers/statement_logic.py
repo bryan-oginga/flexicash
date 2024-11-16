@@ -1,4 +1,4 @@
-from loanapplication.models import Transaction
+from transactions.models import Transaction
 from datetime import timedelta
 from django.utils import timezone
 import qrcode

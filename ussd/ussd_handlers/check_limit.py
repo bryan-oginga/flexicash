@@ -1,7 +1,9 @@
 from django.http import HttpResponse
 from decimal import Decimal
 from fleximembers.models import FlexiCashMember
-from loanapplication.models import MemberLoanApplication,Transaction
+from loanapplication.models import MemberLoanApplication
+from transactions.models import Transaction
+
 from loanmanagement.models import LoanProduct,FlexiCashLoanApplication
 
 def check_limit_handler(request, session_id, phone_number, text):
@@ -11,10 +13,10 @@ def check_limit_handler(request, session_id, phone_number, text):
         return HttpResponse("END Member not found. Please register first.", content_type="text/plain")
 
     # Calculate loan limit based on criteria
-    if member.balance > 0:
-        response = "END You have an outstanding balance. Please clear it before requesting a new loan."
+    if member.member_balance > 0:
+        response = "END You have an outstanding balance. Please clear it to qualify for a limit."
     elif member.credit_score < 50:  # Example credit score threshold
-        response = "END You dont qualify for a loan.Continue transacting to qualify for a loan."
+        response = "END You dont qualify for a loan,please try again later."
     else:
         # Calculate loan limit based on credit score or other criteria
         loan_limit = member.loan_limit 

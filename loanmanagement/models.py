@@ -70,19 +70,21 @@ class FlexiCashLoanApplication(models.Model):
         return f"Loan Application {self.loan_id} - {self.loan_product.name} for {self.member}"
 
     class Meta:
-        verbose_name = "Manage Loan Application"
-        verbose_name_plural = "Manage Loan Applications"
+        verbose_name = "Manage  Loan"
+        verbose_name_plural = "Manage Loans"
         ordering = ['-application_date']
 
 
+#balance Loan application update on disbursement
 @receiver(post_save,sender=FlexiCashLoanApplication)
 def update_loan_application_balance(sender,instance,**kwargs):
     if instance.loan_status == 'Disbursed':
        member = instance.member 
        try:
-           loan = MemberLoanApplication.objects.get(member=member)
+           loan = MemberLoanApplication.objects.get(payment_complete=False)
            print("This is the balance : ",loan.outstanding_balance)
            loan.outstanding_balance = instance.total_repayment
+           loan.due_date = instance.loan_due_date
            loan.save()
        except MemberLoanApplication.DoesNotExist:
            print("The loan does not exits : ",loan.outstanding_balance)

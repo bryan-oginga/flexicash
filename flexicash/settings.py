@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     'loanapplication',
     'loanmanagement',
     'lipanampesa',
+    'transactions',
     
     'rest_framework',
     'phonenumber_field',

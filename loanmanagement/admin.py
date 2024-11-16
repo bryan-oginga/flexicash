@@ -25,7 +25,7 @@ class FlexiCashLoanApplicationAdmin(admin.ModelAdmin):
     list_filter = ('loan_status', 'application_date', 'loan_due_date', 'approval_date')
     search_fields = ('loan_id', 'member__first_name', 'member__last_name', 
                      'member__membership_number', 'loan_product__name')
-    readonly_fields = ('loan_id', 'application_date','approval_date',)
+    readonly_fields = ('loan_id', 'application_date','approval_date','loan_due_date')
     date_hierarchy = 'application_date'
     ordering = ['-application_date']
     fieldsets = (

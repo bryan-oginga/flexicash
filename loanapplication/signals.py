@@ -1,7 +1,8 @@
 from django.db.models.signals import pre_save,post_save
 from django.dispatch import receiver
-from .models import MemberLoanApplication,Transaction  # Assuming the model is called MemberLoan
+from .models import MemberLoanApplication  # Assuming the model is called MemberLoan
 from loanmanagement.models import LoanProduct,FlexiCashLoanApplication
+from transactions.models import Transaction,LoanStatement
 from decimal import Decimal
 from django.utils import timezone
 from datetime import timedelta
@@ -22,11 +23,7 @@ def populate_loan_details(sender, instance, **kwargs):
         instance.loan_yield = instance.principal_amount * (instance.interest_rate / Decimal(100))
         instance.total_repayment = (instance.principal_amount + instance.loan_yield).quantize(Decimal("0.01"))
         
-        # Set the due date based on the loan duration
-        instance.due_date = timezone.now().date() + timezone.timedelta(days=loan_product.loan_duration)
 
-        # Optionally, you can also populate other fields based on your business logic
-        # For example, set the loan balance to the requested amount when the loan is first applied
         instance.loan_balance = instance.principal_amount
 
     else:
@@ -34,13 +31,9 @@ def populate_loan_details(sender, instance, **kwargs):
         instance.loan_product = None
         instance.interest_rate = Decimal('0.00')
         instance.total_repayment = Decimal('0.00')
-        instance.due_date = None
         instance.loan_balance = Decimal('0.00')
         
         
-
-
-
 @receiver(post_save, sender=MemberLoanApplication)
 def create_flexicash_loan_application(sender, instance, created, **kwargs):
     """Create a corresponding FlexiCashLoanApplication whenever a MemberLoanApplication is saved."""
@@ -71,48 +64,4 @@ def create_flexicash_loan_application(sender, instance, created, **kwargs):
         loan_application.save()
         print(f"FlexiCashLoanApplication created: {loan_application.loan_id}")
         
-        
-# @receiver(post_save, sender=Transaction)
-# def handle_loan_repayment(sender, instance, created, **kwargs):
-#     if created and instance.transaction_type == 'Repayment':
-#         member = instance.member
-#         loan = instance.loan
-
-#         # Update Member's balance by subtracting repayment amount
-#         member.balance -= instance.amount
-#         member.save()
-
-#         # Update loan balance in MemberLoanApplication
-#         loan.loan_balance -= instance.amount
-#         if loan.loan_balance <= Decimal('0.00'):
-#             loan.loan_balance = Decimal('0.00')
-#             loan.payment_complete = True  # Set to True if fully repaid
-#             # Close the FlexiCashLoanApplication status if fully repaid
-#             flexi_loan = FlexiCashLoanApplication.objects.filter(member=member, loan_product=loan.loan_product).first()
-#             if flexi_loan:
-#                 flexi_loan.loan_status = 'Closed'
-#                 flexi_loan.save()
-#         loan.save()
-
-@receiver(post_save, sender=Transaction)
-def handle_loan_repayment(sender, instance, created, **kwargs):
-    if created and instance.transaction_type == 'Repayment':
-        member = instance.member
-        loan = instance.loan
-
-        # Update Member's balance by subtracting repayment amount
-        member.balance -= instance.amount
-        member.save()
-
-        # Update loan balance in MemberLoanApplication
-        loan.loan_balance -= instance.amount
-        if loan.loan_balance <= Decimal('0.00'):
-            loan.loan_balance = Decimal('0.00')
-            loan.payment_complete = True  # Set to True if fully repaid
-            # Close the FlexiCashLoanApplication status if fully repaid
-            flexi_loan = FlexiCashLoanApplication.objects.filter(member=member, loan_product=loan.loan_product).first()
-            if flexi_loan:
-                flexi_loan.loan_status = 'Closed'
-                flexi_loan.save()
-        loan.save()
         
