@@ -55,10 +55,6 @@ def create_flexicash_loan_application(sender, instance, created, **kwargs):
         loan_yield = (principal_amount * interest_rate / Decimal(100)).quantize(Decimal("0.01"))
         total_repayment = (principal_amount + loan_yield).quantize(Decimal("0.01"))
         
-        # Calculate loan due date
-        due_date = timezone.now().date() + timedelta(days=loan_product.loan_duration)
-        outstanding_balance = instance.outstanding_balance
-        # Generate loan ID (ensure uniqueness)
         loan_id = f"FLN-{instance.pk:05}" if instance.pk else f"FLN-{FlexiCashLoanApplication.objects.count() + 1:05}"
         
         # Create the FlexiCashLoanApplication instance
@@ -70,17 +66,9 @@ def create_flexicash_loan_application(sender, instance, created, **kwargs):
             loan_yield=loan_yield,
             total_repayment=total_repayment,
             loan_status='Pending',  # Loan starts in 'Pending' status
-            loan_due_date=due_date,
             loan_id=loan_id,
-            outstanding_balance = outstanding_balance 
         )
-     
-    
-        
-        # Save the FlexiCashLoanApplication instance
         loan_application.save()
-
-        # Optionally log for debugging
         print(f"FlexiCashLoanApplication created: {loan_application.loan_id}")
         
         
