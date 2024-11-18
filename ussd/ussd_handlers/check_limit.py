@@ -4,7 +4,6 @@ from fleximembers.models import FlexiCashMember
 from loanapplication.models import MemberLoanApplication
 from transactions.models import Transaction
 
-from loanmanagement.models import LoanProduct,FlexiCashLoanApplication
 
 def check_limit_handler(request, session_id, phone_number, text):
     member = FlexiCashMember.objects.filter(phone=phone_number).first()

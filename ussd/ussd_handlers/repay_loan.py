@@ -1,6 +1,6 @@
 from django.http import HttpResponse
 from fleximembers.models import FlexiCashMember
-from loanapplication.models import MemberLoanApplication
+from loanapplication.models import MemberLoanApplication,LoanProduct
 from transactions.models import Transaction
 from decimal import Decimal
 # from lipanampesa.utils import initiate_stk_push  # Import the function to trigger STK Push
@@ -43,16 +43,18 @@ def repay_loan_handler(request, session_id, phone_number, text):
             if pin == member.pin:
                 loan = MemberLoanApplication.objects.filter(member=member, payment_complete=False).first()
                 if loan:
-                    # Initiate STK Push for full repayment
-                    response = f"END STK Push has been initiated successfully."
-                    stk_response = service.collect.mpesa_stk_push(phone_number='254799043853',
+                    if member.member_balance == Decimal('0.00'):
+                        response = f"END Amount exceeds your  loan  balance of : {loan.outstanding_balance}."
+                    else:
+                        response = f"END STK Push has been initiated successfully."
+                        stk_response = service.collect.mpesa_stk_push(phone_number='254799043853',
                                   email="joe@doe.com", amount=10, narrative="Purchase")
 
                     # Check if STK Push initiation was successful
-                    invoice_id = stk_response['invoice']['invoice_id']
-                    if invoice_id:
+                        invoice_id = stk_response['invoice']['invoice_id']
+                        if invoice_id:
                         # Create transaction record
-                        Transaction.objects.create(
+                            Transaction.objects.create(
                             member=member, 
                             loan=loan, 
                             amount=loan.outstanding_balance, 
@@ -60,9 +62,9 @@ def repay_loan_handler(request, session_id, phone_number, text):
                             repayment_type = "Full"
                             
                         )
-                        response = "END Your loan has been fully repaid. Thank you! STK Push initiated, awaiting confirmation."
-                    else:
-                        response = "END Payment initiation failed. Please try again."
+                        # response = "END Your loan has been fully repaid. Thank you! STK Push initiated, awaiting confirmation."
+                        else:
+                            response = "END Payment initiation failed. Please try again."
 
                 else:
                     response = "END No active loan found for repayment."

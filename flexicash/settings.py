@@ -19,7 +19,6 @@ INSTALLED_APPS = [
     'reports',
     'fleximembers',
     'loanapplication',
-    'loanmanagement',
     'lipanampesa',
     'transactions',
     

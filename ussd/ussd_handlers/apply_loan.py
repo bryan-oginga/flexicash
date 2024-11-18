@@ -2,9 +2,8 @@ from decimal import Decimal
 from django.shortcuts import get_object_or_404
 from ussd import constants
 from fleximembers.models import FlexiCashMember
-from loanapplication.models import MemberLoanApplication
+from loanapplication.models import MemberLoanApplication,LoanProduct
 from transactions.models import Transaction
-from loanmanagement.models import LoanProduct,FlexiCashLoanApplication
 
 from django.http import HttpResponse
 

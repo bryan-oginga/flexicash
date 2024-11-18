@@ -1,67 +1,82 @@
 from django.db.models.signals import pre_save,post_save
 from django.dispatch import receiver
 from .models import MemberLoanApplication  # Assuming the model is called MemberLoan
-from loanmanagement.models import LoanProduct,FlexiCashLoanApplication
 from transactions.models import Transaction,LoanStatement
+from fleximembers.models import FlexiCashMember
 from decimal import Decimal
 from django.utils import timezone
 from datetime import timedelta
+import datetime
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 
 @receiver(pre_save, sender=MemberLoanApplication)
 def populate_loan_details(sender, instance, **kwargs):
     """
-    This function auto-populates the loan fields such as loan_product,
-    interest_rate, total_repayment, etc., when a loan application is saved.
+    Auto-populates loan details such as interest rate, total repayment, etc.
     """
     if instance.loan_product:
-        loan_product = instance.loan_product  # Get the selected loan product
-        
-        # Auto-populate interest rate from the selected loan product
+        loan_product = instance.loan_product
         instance.interest_rate = loan_product.interest_rate
-        
-        # Calculate interest and total repayment
         instance.loan_yield = instance.principal_amount * (instance.interest_rate / Decimal(100))
-        instance.total_repayment = (instance.principal_amount + instance.loan_yield).quantize(Decimal("0.01"))
-        
 
-        # instance.loan_balance = instance.principal_amount
+        # Calculate total repayment
+        instance.total_repayment = (
+            instance.principal_amount + instance.loan_yield + (instance.loan_penalty or Decimal(0))
+        ).quantize(Decimal("0.00"))
+
+        # Calculate penalty only for disbursed loans
+        if instance.loan_status == "Disbursed" and instance.due_date:
+            if instance.due_date < timezone.now().date():
+                instance.loan_penalty = (instance.total_repayment * Decimal(0.20)).quantize(Decimal("0.00"))
+            else:
+                instance.loan_penalty = Decimal(0)
+        else:
+            instance.loan_penalty = Decimal(0)
+            
+        if instance.loan_status == 'Disbursed':
+            instance.outstanding_balance = instance.total_repayment
 
     else:
-        # If for some reason there's no loan product, set default values or raise an error
-        instance.loan_product = None
+        # Set default values for missing loan_product
         instance.interest_rate = Decimal('0.00')
+        instance.loan_yield = Decimal('0.00')
         instance.total_repayment = Decimal('0.00')
-        # instance.loan_balance = Decimal('0.00')
+        instance.loan_penalty = Decimal('0.00')
+
+def update_member_loan_status(sender, instance, **kwargs):
+    """Update the status of MemberLoanApplication based on specific loan actions."""
+    
+    # Define a mapping only if necessary
+    status_mapping = {
+        'Approved': 'Approved',
+        'Rejected': 'Rejected',
+        'Disbursed': 'Disbursed',
+        'Closed': 'Closed',
+        'Pending': 'Pending',
+    }
+
+    # Check if the status needs updating
+    new_status = status_mapping.get(instance.loan_status)
+    if new_status and instance.loan_status != new_status:
+        instance.loan_status = new_status
+        # Avoid infinite loop by using update instead of save
+        MemberLoanApplication.objects.filter(pk=instance.pk).update(loan_status=new_status)
         
-        
+        # Log the action
+        logger.info(f"Updated loan application {instance.application_ref} to status {new_status}")
+
+
 @receiver(post_save, sender=MemberLoanApplication)
-def create_flexicash_loan_application(sender, instance, created, **kwargs):
-    """Create a corresponding FlexiCashLoanApplication whenever a MemberLoanApplication is saved."""
-    if created:
-        # Extract data from the MemberLoanApplication instance
-        member = instance.member
-        loan_product = instance.loan_product
-        principal_amount = instance.principal_amount
-        
-        # Calculate the interest and total repayment
-        interest_rate = loan_product.interest_rate
-        loan_yield = (principal_amount * interest_rate / Decimal(100)).quantize(Decimal("0.01"))
-        total_repayment = (principal_amount + loan_yield).quantize(Decimal("0.01"))
-        
-        loan_id = f"FLN-{instance.pk:05}" if instance.pk else f"FLN-{FlexiCashLoanApplication.objects.count() + 1:05}"
-        
-        # Create the FlexiCashLoanApplication instance
-        loan_application = FlexiCashLoanApplication(
-            member=member,
-            loan_product=loan_product,
-            principal_amount=principal_amount,
-            interest_rate=interest_rate,
-            loan_yield=loan_yield,
-            total_repayment=total_repayment,
-            loan_status='Pending',  # Loan starts in 'Pending' status
-            loan_id=loan_id,
-        )
-        loan_application.save()
-        print(f"FlexiCashLoanApplication created: {loan_application.loan_id}")
-        
+def update_member_balance(sender, instance, created, **kwargs):
+    if instance.loan_status == 'Disbursed':
+        try:
+            flexicash_member = FlexiCashMember.objects.get(email=instance.member.email)
+            flexicash_member.member_balance = instance.total_repayment
+            flexicash_member.save()
+        except FlexiCashMember.DoesNotExist:
+            print("The mmeber does not exist")
         
