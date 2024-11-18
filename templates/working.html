@@ -1,164 +1,44 @@
-def initiate_stk_push(request):
-    if request.method == 'POST':
-        phone_number = '254799043853'
-        amount = 1
-        narrative = 'Purchase'
+{
+    'id': 'ef3f49ec-0f27-4e1f-84e0-1fc8d6af268c', 
 
-        try:
-            # Send payment request to IntaSend
-            response = service.collect.mpesa_stk_push(
-                phone_number=phone_number,
-                amount=amount,
-                narrative=narrative
-            )
+    'invoice': { 
+                    'invoice_id': 'QJ3GJGY',
+                     'state': 'PENDING',
+                     'provider': 'M-PESA',
+                     'charges': 0.0,
+                     'net_amount': '648.00',
+                     'currency': 'KES',
+                     'value': 648.0,
+                     'account': '254799043853',
+                     'api_ref': 'API Request',
+                     'mpesa_reference': None,
+                     'host': '41.212.64.158',
+                     'card_info': {'bin_country': None, 'card_type': None},
+                     'retry_count': 0, 
+                     failed_reason': None,
+                     'failed_code': None,
+                     'failed_code_link': None,
+                     'created_at': '2024-11-18T17:12:50.890100+03:00',
+                     'updated_at': '2024-11-18T17:12:50.928483+03:00'
+                     },
+                     
+     'customer': {
+                    'customer_id': 'ZY4VV3R',
+                    'phone_number': '254799043853',
+                    'email': None,
+                    'first_name': None,
+                    'last_name': None,
+                    'country': None,
+                    'zipcode': None,
+                    'provider': 'M-PESA',
+                    'created_at': '2024-09-20T16:23:20.972591+03:00',
+                    'updated_at': '2024-09-20T20:56:01.990056+03:00'
+        },
 
-            # Get the invoice_id for status checking
-            invoice_id = response['invoice']['invoice_id']
-            logger.info(f"STK Push initiated, invoice_id: {invoice_id}")
-
-            # Return a success response with invoice_id for status tracking
-            return JsonResponse({
-                "success": True,
-                "message": "Payment initiation successful. Awaiting confirmation.",
-                "invoice_id": invoice_id
-            })
-
-        except Exception as e:
-            logger.error(f"Unexpected error during payment initiation: {str(e)}")
-            return JsonResponse({
-                "success": False,
-                "error": "An error occurred while initiating payment."
-            }, status=500)
-
-    return JsonResponse({"error": "Only POST requests are allowed."}, status=400)
-
-{% comment %}  {% endcomment %}
-def initiate_stk_push(request):
-    if request.method == 'POST':
-        phone_number = '254799043853'
-        amount = 1
-        narrative = 'Purchase'
-
-        try:
-            # Send payment request to IntaSend
-            response = service.collect.mpesa_stk_push(
-                phone_number=phone_number,
-                amount=amount,
-                narrative=narrative
-            )
-
-            # Get the invoice_id for status checking
-            invoice_id = response['invoice']['invoice_id']
-            logger.info(f"STK Push initiated, invoice_id: {invoice_id}")
-
-            # Create a new MpesaTransaction record in the database
-            transaction = MpesaTransaction(
-                amount=amount,
-                phone_number=phone_number,
-                narrative=narrative,
-                status='PENDING'  # As the transaction is still pending at this point
-            )
-            transaction.save()
-            logger.info(f"Transaction saved with invoice_id: {invoice_id}")
-
-            # Return a success response with invoice_id for status tracking
-            return JsonResponse({
-                "success": True,
-                "message": "Payment initiation successful. Awaiting confirmation.",
-                "invoice_id": invoice_id
-            })
-
-        except Exception as e:
-            logger.error(f"Unexpected error during payment initiation: {str(e)}")
-            return JsonResponse({
-                "success": False,
-                "error": "An error occurred while initiating payment."
-            }, status=500)
-
-    return JsonResponse({"error": "Only POST requests are allowed."}, status=400)
-
-    {% comment %}  {% endcomment %}
-    @csrf_exempt
-def initiate_stk_push(request):
-    if request.method == 'POST':
-        phone_number = '254799043853'
-        amount = 1
-        narrative = 'Purchase'
-        email = 'test@test.com'
-
-        try:
-            # Send payment request to IntaSend
-            response = service.collect.mpesa_stk_push(
-                phone_number=phone_number,
-                amount=amount,
-                narrative=narrative,
-                email=email,
-            )
-
-            # Get the invoice_id from the response for later status checking
-            invoice_id = response['invoice']['invoice_id']
-            logger.info(f"STK Push initiated, invoice_id: {invoice_id}")
-
-            # Create a new MpesaTransaction record with status 'PENDING'
-            transaction = MpesaTransaction(
-                amount=amount,
-                phone_number=phone_number,
-                narrative=narrative,
-                status='PENDING',  # Initially set status to PENDING
-                invoice_id=invoice_id,
-                email=email
-            )
-            transaction.save()
-            logger.info(f"Transaction saved with invoice_id: {invoice_id}")
-
-            # Trigger the Celery task to check payment status in the background
-            check_payment_status.apply_async(args=[invoice_id, response], countdown=5)  # Pass the response to the task
-
-            return JsonResponse({
-                "success": True,
-                "message": "Payment initiation successful. Awaiting confirmation.",
-                "invoice_id": invoice_id
-            })
-
-        except Exception as e:
-            logger.error(f"Unexpected error during payment initiation: {str(e)}")
-            return JsonResponse({
-                "success": False,
-                "error": "An error occurred while initiating payment."
-            }, status=500)
-
-    return JsonResponse({"error": "Only POST requests are allowed."}, status=400)
-
-{% comment %}  {% endcomment %}
-from __future__ import absolute_import, unicode_literals
-from celery import shared_task
-from .models import LoanMpesaTransaction
-from intasend import APIService
-from django.conf import settings
-import logging
-
-logger = logging.getLogger(__name__)
-
-token = settings.INSTASEND_SECRET_KEY
-publishable_key = settings.INSTASEND_PUBLISHABLE_KEY
-service = APIService(token=token, publishable_key=publishable_key, test=True)
-
-@shared_task
-def check_payment_status(invoice_id, response):
-    # Initialize the IntaSend API service
-    token = settings.INSTASEND_SECRET_KEY
-    service = APIService(token=token, test=True)
-
-    try:
-        # Query payment status from IntaSend API
-        status_response = service.collect.payment_status(invoice_id)
-
-        # Update the transaction in the database based on the status
-        transaction = LoanMpesaTransaction.objects.get(invoice_id=invoice_id)
-        transaction.state = status_response['invoice']['state']
-        transaction.save()
-
-        logger.info(f"Payment status updated for invoice_id: {invoice_id} - {status_response['invoice']['state']}")
-
-    except Exception as e:
-        logger.error(f"Error checking payment status for invoice_id {invoice_id}: {str(e)}")
+                    'payment_link': None,
+                    'customer_comment': None,
+                    'refundable': False,
+                    'created_at': '2024-11-18T17:12:50.904153+03:00', 
+                    'updated_at': '2024-11-18T17:12:50.904173+03:00'
+     
+     }

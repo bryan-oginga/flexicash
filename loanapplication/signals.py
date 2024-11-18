@@ -1,7 +1,7 @@
 from django.db.models.signals import pre_save,post_save
 from django.dispatch import receiver
 from .models import MemberLoanApplication  # Assuming the model is called MemberLoan
-from transactions.models import Transaction,LoanStatement
+from transactions.models import Transaction
 from fleximembers.models import FlexiCashMember
 from decimal import Decimal
 from django.utils import timezone

@@ -26,15 +26,3 @@ class Transaction(models.Model):
 
 
     
-class LoanStatement(models.Model):
-    member = models.ForeignKey(FlexiCashMember, on_delete=models.CASCADE, related_name="statements")
-    transaction = models.ForeignKey(Transaction, on_delete=models.CASCADE, related_name="statement_entries")
-    date = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Loan statement: {self.transaction.transaction_type} of {self.transaction.amount} on {self.date} for {self.member}"
-
-    class Meta:
-        verbose_name = "Loan Statement"
-        verbose_name_plural = "Loan Statements"
-        ordering = ['-date']

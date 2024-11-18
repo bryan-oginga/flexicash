@@ -1,115 +1,140 @@
-{% load static %}
-<!DOCTYPE html>
-<html class="no-js" lang="en">
-<head>
-  <!-- Meta Tags -->
-  <meta charset="utf-8">
-  <meta http-equiv="x-ua-compatible" content="ie=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Site Title -->
-  <title>Flexicash</title>
-  <link rel="stylesheet" href="{{ base_url }}{% static 'sassets/css/style.css' %}">
-</head>
+from django.http import HttpResponse
+from fleximembers.models import FlexiCashMember
+from loanapplication.models import MemberLoanApplication,LoanProduct
+from transactions.models import Transaction
+from decimal import Decimal
+# from lipanampesa.utils import initiate_stk_push  # Import the function to trigger STK Push
+from django.utils import timezone
+import logging
 
-<body>
-  <div class="cs-container">
-    <div class="cs-invoice cs-style1">
-      <div class="cs-invoice_in" id="download_section">
-        <div class="cs-invoice_head cs-type1 cs-mb25">
-          <div class="cs-invoice_left">
-            <div class="cs-logo cs-mb5"><img src="{{ qr_image_path }}" alt="Logo"></div>
-            <p class="cs-invoice_number cs-primary_color cs-mb0 cs-f16"><b class="cs-primary_color">REF N0:</b> #{{loan_id}}</p>
-          </div>
-          <div class="cs-invoice_right cs-text_right">
-            <div class="cs-logo cs-mb5"><img src="{{ base_url }}{% static 'sassets/img/logo.png' %}" alt="Logo"></div>
-            <p  style="color:#BE3290" class="cs-invoice_number  cs-mb0 cs-f16"><b >FLEXICASH</b> </p>
+from django.http import JsonResponse
+from intasend import APIService
+import logging
+from django.conf import settings
 
-          </div>
-        </div>
-        <div class="cs-invoice_head cs-mb10">
-          <div class="cs-invoice_left">
-            <b class="cs-primary_color">Loan Statement   </b>
-            <p class="cs-mb8">A summary of your recent loan transactions, including disbursements, repayments, and  outstanding balance.
+# Initialize IntaSend APIService with sandbox/test mode enabled
+service = APIService(token=settings.INSTASEND_SECRET_KEY, 
+                     publishable_key=settings.INSTASEND_PUBLISHABLE_KEY, 
+                     test=True)
 
 
-          </div>
-          <div class="cs-invoice_right cs-text_right">
-            <b class="cs-primary_color">Flexicash Microfinance</b>
-            <p>
-              Bamburi, Mombasa <br/>
-              info@flexichash.com <br/>
-               <br/>
-            </p>
-          </div>
-        </div>
-        <div class="cs-heading cs-style1 cs-f18 cs-primary_color cs-mb25 cs-semi_bold">Member Information</div>
-        <ul class="cs-grid_row cs-col_3 cs-mb5">
-          <li>
-            <p class="cs-mb20"><b class="cs-primary_color">MEMBER NAME</b> <br><span class="cs-primary_color">{{member.first_name}} {{member.last_name}}</span></p>
-          </li>
-          <li>
-            <p class="cs-mb20"><b class="cs-primary_color">MEMBERSHIP ID</b> <br><span class="cs-primary_color">{{member_id}}</span></p>
-          
-          </li>
-          <li>
-            <p class="cs-mb20"><b class="cs-primary_color">LOAN TYPE</b> <br><span class="cs-primary_color">{{loan_type}} </span></p>
-          </li>
+def repay_loan_handler(request, session_id, phone_number, text):
+    parts = text.split('*')
+    member = FlexiCashMember.objects.filter(phone=phone_number).first()
 
-        </ul>
-                          <div  style="color:#BE3290;text-align:center" class="cs-heading cs-style1 cs-f18 cs-primary_color cs-mb25 cs-semi_bold">{{period}} MONTH LOAN STATEMENT </div>
+    if member:
+        # Format phone number
+        # First, ask for repayment option
+        if len(parts) == 1:
+            response = "CON Please select repayment option:\n1. Full Payment\n2. Partial Payment"
+        
+        # If "Full payment" is selected, ask for PIN
+        elif len(parts) == 2 and parts[1] == "1":
+            response = "CON Enter your PIN to confirm full repayment."
+        
+        # If "Partial payment" is selected, ask for amount
+        elif len(parts) == 2 and parts[1] == "2":
+            response = "CON Enter amount for partial repayment:"
+        
+        # If PIN is entered for full repayment
+        elif len(parts) == 3 and parts[1] == "1":
+            amount = Decimal(parts[1])
+            pin = parts[2]
+            if pin == member.pin:
+                loan = MemberLoanApplication.objects.filter(member=member, payment_complete=False).first()
+                if loan:
+                    if member.member_balance == Decimal('0.00'):
+                        response = f"END Amount exceeds your  loan  balance of : {loan.outstanding_balance}."
+                    else:
+                        response = f"END STK Push has been initiated successfully."
+                        stk_response = service.collect.mpesa_stk_push(
+                            phone_number='254799043853',
+                            # phone_number=member.phone.lstrip('+'),
+                            email=member.email,
+                            amount=float(loan.outstanding_balance),
+                            narrative=loan.application_ref
+                            )
+                        print(stk_response)
+                        invoice_id = stk_response['invoice']['invoice_id']
+                        if invoice_id:
+                            print("This is the invoice Id : ",invoice_id)
+                        # Create transaction record
+                            Transaction.objects.create(
+                            member=member, 
+                            loan=loan, 
+                            amount=amount, 
+                            transaction_type="Repayment",
+                            repayment_type = "Full"
+                            
+                        )
+                        # response = "END Your loan has been fully repaid. Thank you! STK Push initiated, awaiting confirmation."
+                        else:
+                            response = "END Payment initiation failed. Please try again."
 
-        <div class="cs-table cs-style2">
-          <div class="cs-round_border">
-            <div class="cs-table_responsive">
-              <table>
-                <thead>
-                  <tr class="cs-focus_bg">
-                    <th class="cs-width_2 cs-semi_bold cs-primary_color">Date</th>
-                    <th class="cs-width_6 cs-semi_bold cs-primary_color">Description</th>
-                    <th class="cs-width_2 cs-semi_bold cs-primary_color cs-text_right">Amount</th>
-                    <th class="cs-width_2 cs-semi_bold cs-primary_color cs-text_right">Balance</th>
-                  </tr>
-                </thead>
-                <tbody>
-                {% for transaction in transactions %}
-                  <tr>
-                    <td class="cs-width_2">{{ transaction.date|date:"d/m/Y" }}</td>
-                    <td class="cs-width_5">{{ transaction.transaction_type }}</td>
-                    <td class="cs-width_4 cs-text_right cs-primary_color"> {{ transaction.amount }}</td>
-                    <td class="cs-width_4 cs-text_right cs-primary_color"> {{current_balance}}</td>
-                  </tr>
-                {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-        <div class="cs-table cs-style2">
-          <div class="cs-table_responsive">
-            <table>
-              <tbody>
-                <tr class="cs-table_baseline">
-                  <td class="cs-width_5">
-                    <b class="cs-primary_color"></b><br/>
-                     <br/>
-                  </td>
-                  <td class="cs-width_5 cs-text_right">
-                    <p class="cs-mb5 cs-mb5 cs-f15 cs-primary_color cs-semi_bold"> Paid:</p>
-                    <p class="cs-mb5 cs-mb5 cs-f15 cs-primary_color cs-semi_bold"> Balance:</p>
-                  </td>
-                  <td class="cs-width_2 cs-text_rightcs-f16">
-                    <p class="cs-mb5 cs-mb5 cs-text_right cs-f15 cs-primary_color cs-semi_bold"> {{total_paid}}</p>
-                    <p class="cs-mb5 cs-mb5 cs-text_right cs-f15 cs-primary_color cs-semi_bold"> {{current_balance}}</p>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      
-    </div>
-  </div>
-  
-</body>
-</html>
+                else:
+                    response = "END No active loan found for repayment."
+            else:
+                response = "END Incorrect PIN. Please try again."
+        
+        # If amount is entered for partial repayment
+        elif len(parts) == 3 and parts[1] == "2":
+            amount = Decimal(parts[2])
+            response = f"CON Enter your PIN to confirm partial repayment of {amount}."
+        
+        # If PIN and amount are entered for partial repayment
+        elif len(parts) == 4 and parts[1] == "2":
+            amount = Decimal(parts[2])
+            pin = parts[3]
+            if pin == member.pin:
+                loan = MemberLoanApplication.objects.filter(member=member, payment_complete=False).first()
+                if loan:
+                    # Ensure repayment doesn't exceed loan balance
+                    if amount > loan.outstanding_balance:
+                        response = f"END Amount exceeds the loan balance. Remaining balance: {loan.outstanding_balance}."
+                    else:
+                        # Initiate STK Push for partial repayment
+                        response = f"END STK Push has been initiated successfully."
+                        stk_response  = service.collect.mpesa_stk_push(
+                            phone_number='254799043853',
+                            amount=float(amount),
+                            narrative=loan.application_ref
+
+                            # phone_number=member.phone.lstrip('+'),
+                            # email=member.email,
+                            # narrative=loan.application_ref
+                            )
+
+                        invoice_id = stk_response['invoice']['invoice_id']
+                        amount_paid = stk_response['invoice']['net_amount']
+                        state = stk_response['invoice']['state']
+                        account = stk_response['invoice']['account']
+                        
+                        if invoice_id:
+                            print("This is the invoice Id : ",invoice_id)
+                            # Create transaction record
+                            Transaction.objects.create(
+                                member=member, 
+                                loan=loan, 
+                                amount=float(amount_paid), 
+                                transaction_type="Repayment",
+                                repayment_type = "Partial",
+                                narrative = invoice_id,
+                                status = state,
+                                
+                            )
+                            # response = f"END Partial repayment of {amount} has been received. Remaining balance is {loan.outstanding_balance}."
+                        else:
+                            response = "END Payment initiation failed. Please try again."
+                else:
+                    response = "END No active loan found for repayment."
+            else:
+                response = "END Incorrect PIN. Please try again."
+
+        # If no valid option is selected
+        else:
+            response = "END Invalid option. Please try again."
+
+    else:
+        response = "END Member not found. Please register first."
+
+    return HttpResponse(response, content_type="text/plain")

@@ -14,7 +14,7 @@ def handle_loan_balance(sender, instance, created, **kwargs):
     if created and instance.transaction_type == 'Repayment':
         member = instance.member
         loan = instance.loan
-        amount = instance.amount
+        amount = Decimal(instance.amount)
         repayment_type = instance.repayment_type
 
         with transaction.atomic():
@@ -33,23 +33,6 @@ def handle_loan_balance(sender, instance, created, **kwargs):
 
             # Partial Repayment
             elif repayment_type == 'Partial':
-                # Update member balance
-                # member.member_balance = F('member_balance') - amount
-                # member.save()
-                
-                # # Update Loan Application balance
-                # loan.outstanding_balance = Case(
-                #     When(outstanding_balance__lte=Decimal('0.00'), then=Value(Decimal('0.00'))),
-                #     default=F('outstanding_balance') - amount
-                # )
-                # loan.payment_complete = Case(
-                #     When(outstanding_balance=Decimal('0.00'), then=Value(True)),
-                #     default=Value(False)
-                # )
-                # loan.loan_status = Case(
-                #     When(outstanding_balance=Decimal('0.00'), then=Value('Closed')),default=Value('Pending'),
-                # )
-                # loan.save()
                 
                 member.member_balance = F('member_balance') - amount
                 member.save()
@@ -69,7 +52,6 @@ def handle_loan_balance(sender, instance, created, **kwargs):
                
         
                        
-            # Refresh balances after F() updates
             member.refresh_from_db()
             loan.refresh_from_db()
            
