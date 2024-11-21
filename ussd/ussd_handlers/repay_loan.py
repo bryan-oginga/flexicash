@@ -6,17 +6,14 @@ from decimal import Decimal
 # from lipanampesa.utils import initiate_stk_push  # Import the function to trigger STK Push
 from django.utils import timezone
 import logging
-
 from django.http import JsonResponse
 from intasend import APIService
 import logging
 from django.conf import settings
 
-# Initialize IntaSend APIService with sandbox/test mode enabled
-service = APIService(token=settings.INSTASEND_SECRET_KEY, 
-                     publishable_key=settings.INSTASEND_PUBLISHABLE_KEY, 
-                     test=True)
-
+token = settings.INTASEND_SECRET_KEY
+publishable_key   = settings.INTASEND_PUBLISHABLE_KEY
+service = APIService(token=token, publishable_key=publishable_key, test=True)
 
 def repay_loan_handler(request, session_id, phone_number, text):
     parts = text.split('*')

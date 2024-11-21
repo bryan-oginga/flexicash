@@ -113,9 +113,10 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = 'Flexipay Team <noreply@sendify.com>'
 
-INSTASEND_PUBLISHABLE_KEY = 'ISPubKey_test_7c58de8a-2340-4b9d-af0e-1d2b479086c2'
-INSTASEND_SECRET_KEY = 'ISSecretKey_test_4532c33f-e7f2-403b-9a35-7b69f7ba659b'
+INTASEND_PUBLISHABLE_KEY = 'ISPubKey_test_7c58de8a-2340-4b9d-af0e-1d2b479086c2'
+INTASEND_SECRET_KEY = 'ISSecretKey_test_4532c33f-e7f2-403b-9a35-7b69f7ba659b'
 INTASEND_CHALLENGE_TOKEN = "xtfzlyicegpxjnho"
+INTASEND_WEBHOOK_URL = 'https://f7c2-41-212-105-164.ngrok-free.app/payment/intasend-webhook/'
 
 TINYPESA_API_KEY = "hxIAKK4Ab9h9NXSQJ1qEMN-HJ5NTeeawnU169GA0Cw8vVCD0DJ"  # Replace with your API key
 TINYPESA_USERNAME = "ogingabrian2017@gmail.com"  # Replace with your username

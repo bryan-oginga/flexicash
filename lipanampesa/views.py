@@ -1,154 +1,120 @@
+from intasend import APIService
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render
-# from .utils import process_stk_push
-import logging
 from django.conf import settings
-# from .utils import process_stk_push, handle_webhook_payloa
-from .models import MPesaTransaction
-from .utils import initiate_stk_push
-import uuid
+from .models import LoanMpesaTransaction
+# from .validators import validate_params
+# from .utils import initiatite_stk_push
+import logging
 import json
 
 logger = logging.getLogger(__name__)
 
+# IntaSend configuration
+token = settings.INTASEND_SECRET_KEY
+publishable_key   = settings.INTASEND_PUBLISHABLE_KEY
+service = APIService(token=token, publishable_key=publishable_key , test=True)
+challenge_token = settings.INTASEND_CHALLENGE_TOKEN
+intasend_webhook_url = settings.INTASEND_WEBHOOK_URL 
 
 
+@csrf_exempt
 def mpesa_payment(request):
-    return render(request, 'payment.html')
+    return render(request, 'payment.html', {})
 
 
+    
+@require_POST
 @csrf_exempt
-def stk_push_view(request):
-    if request.method == "POST":
-        phone_number = request.POST.get("phone_number")
-        amount = request.POST.get("amount")
-        account_no = request.POST.get("account_no")
+def initiate_stk_push_view(request):
+    if request.method == 'POST':
+        phone_number = request.POST.get('phone_number')
+        amount = request.POST.get('amount')
+        narrative = request.POST.get('narrative')
+        email = request.POST.get('email')
 
-        response = initiate_stk_push(phone_number, amount, account_no)
-        if response and response.get("CheckoutRequestID"):
-            # Optionally, save the transaction details here if necessary
-            return JsonResponse({"success": True, "message": "Payment initiated successfully."})
-        else:
-            return JsonResponse({"success": False, "message": "Failed to initiate payment."})
-
-    return JsonResponse({"success": False, "message": "Invalid request method."})
-
-@csrf_exempt
-def payment_callback(request):
-    if request.method == "POST":
         try:
-            payload = json.loads(request.body)
-            logger.info("Received callback payload: %s", payload)
+            # Initiate the STK push with IntaSend
+            response = service.collect.mpesa_stk_push(
+                phone_number=phone_number,
+                amount=amount,
+                narrative=narrative,
+                email=email,
+            )
 
-            # Extract necessary information from the callback payload
-            checkout_request_id = payload.get("response", {}).get("CheckoutRequestID")
-            mpesa_receipt_number = payload.get("response", {}).get("MpesaReceiptNumber")
-            result_code = payload.get("response", {}).get("ResultCode")
-            result_desc = payload.get("response", {}).get("ResultDesc")
-            external_reference = payload.get("response", {}).get("ExternalReference")
+            # Extract relevant data from the response
+            invoice_data = response.get("invoice", {})
+            invoice_id = invoice_data.get("invoice_id")
+            state = invoice_data.get("state", "PENDING")
 
-            # Update the transaction status based on the callback
-            transaction = MPesaTransaction.objects.filter(external_reference=external_reference).first()
+            # Save the transaction to the database
+            transaction = LoanMpesaTransaction.objects.create(
+                invoice_id=invoice_id,
+                phone_number=phone_number,
+                email=email,
+                amount=amount,
+                narrative=narrative,
+                state=state,  # Default state is 'PENDING'
+            )
 
-            if transaction:
-                transaction.result_code = result_code
-                transaction.result_desc = result_desc
-                transaction.mpesa_receipt_number = mpesa_receipt_number
-                transaction.status = "SUCCESS" if result_code == 0 else "FAILED"
-                transaction.save()
+            logger.info(f"Transaction saved with Invoice ID: {invoice_id}")
 
-                return JsonResponse({"success": True, "message": "Transaction updated successfully."})
-            else:
-                return JsonResponse({"success": False, "message": "Transaction not found."})
+            return JsonResponse({
+                "success": True,
+                "message": "STK push initiated successfully.",
+                "transaction": {
+                    "invoice_id": transaction.invoice_id,
+                    "state": transaction.state,
+                    "amount": transaction.amount,
+                    "phone_number": transaction.phone_number,
+                }
+            })
 
         except Exception as e:
-            logger.error("Error processing callback: %s", e)
-            return JsonResponse({"success": False, "message": "Error processing callback."})
-    
-    return JsonResponse({"success": False, "message": "Invalid request method."})
+            logger.exception("Error during payment initiation")
+            return JsonResponse({"success": False, "error": "An internal server error occurred."}, status=500)
 
+        
 
+@csrf_exempt
+def intasend_webhook(request):
+    """
+    Handle webhook events from IntaSend to update payment status.
+    """
+    try:
+        # Parse JSON payload
+        payload = json.loads(request.body.decode("utf-8"))
+        challenge_token = payload.get('challenge')
+        invoice_id = payload.get('invoice_id')
+        state = payload.get('state')
 
+        # Validate the challenge token
+        if challenge_token != settings.INTASEND_CHALLENGE_TOKEN:
+            logger.warning("Invalid challenge token received in webhook")
+            return JsonResponse({"success": False, "error": "Invalid challenge token"}, status=403)
 
-# @csrf_exempt
-# def tinypesa_webhook(request):
-#     if request.method == "POST":
-#         payload = json.loads(request.body)
-#         stk_callback = payload.get("Body", {}).get("stkCallback", {})
+        # Find the transaction in the database
+        try:
+            transaction = LoanMpesaTransaction.objects.get(invoice_id=invoice_id)
+        except LoanMpesaTransaction.DoesNotExist:
+            logger.warning(f"Transaction with invoice ID {invoice_id} not found")
+            return JsonResponse({"success": False, "error": "Transaction not found"}, status=404)
 
-#         result_code = stk_callback.get("ResultCode")
-#         external_reference = stk_callback.get("ExternalReference")
-#         mpesa_receipt = None
-#         transaction_date = None
+        # Update the transaction state
+        transaction.state = state
+        transaction.save()
 
-#         # Check if the transaction was successful
-#         if result_code == 0:
-#             metadata = stk_callback.get("CallbackMetadata", {}).get("Item", [])
-#             for item in metadata:
-#                 if item["Name"] == "MpesaReceiptNumber":
-#                     mpesa_receipt = item["Value"]
-#                 if item["Name"] == "TransactionDate":
-#                     transaction_date = item["Value"]
+        logger.info(f"Transaction {invoice_id} updated to state: {state}")
 
-#         # Update the transaction in the database
-#         try:
-#             transaction = TinyPesaTransaction.objects.get(account_no=external_reference)
-#             transaction.is_complete = result_code == 0
-#             transaction.result_code = result_code
-#             transaction.result_description = stk_callback.get("ResultDesc")
-#             transaction.mpesa_receipt = mpesa_receipt
-#             transaction.transaction_date = transaction_date
-#             transaction.save()
+        # Return success response
+        return JsonResponse({"success": True, "message": f"Transaction {invoice_id} updated successfully"})
 
-#             return JsonResponse({"success": True, "message": "Transaction updated successfully."})
-#         except TinyPesaTransaction.DoesNotExist:
-#             return JsonResponse({"success": False, "message": "Transaction not found."})
+    except json.JSONDecodeError:
+        logger.exception("Invalid JSON payload in webhook request")
+        return JsonResponse({"success": False, "error": "Invalid JSON payload"}, status=400)
 
-#     return JsonResponse({"success": False, "message": "Invalid request method."})
-
-
-# @require_POST
-# @csrf_exempt
-# def initiate_stk_push_view(request):
-#     if request.method == 'POST':
-#         phone_number = request.POST.get('phone_number')
-#         amount = request.POST.get('amount')
-#         narrative = request.POST.get('narrative')
-#         email = request.POST.get('email')
-
-#         try:
-#             response = process_stk_push(
-#                 phone_number=phone_number,
-#                 amount=amount,
-#                 narrative=narrative,
-#                 email=email,
-#             )
-#             return JsonResponse(response)
-#         except Exception as e:
-#             logger.exception("Error during payment initiation")
-#             return JsonResponse({"success": False, "error": "An internal server error occurred."}, status=500)
-
-# @require_POST
-# @csrf_exempt
-# def intasend_webhook(request):
-#     """
-#     Handle webhook events from IntaSend to update payment status.
-#     """
-#     try:
-#         payload = request.json()
-#         challenge_token = payload.get('challenge')
-
-#         # Validate the challenge token
-#         if challenge_token != settings.INTASEND_CHALLENGE_TOKEN:
-#             logger.warning("Invalid challenge token")
-#             return JsonResponse({"success": False, "error": "Invalid challenge token"}, status=403)
-
-#         # Process the webhook payload
-#         response = handle_webhook_payload(payload)
-#         return JsonResponse(response)
-
-#     except Exception as e:
-#         logger.exception("Error processing webhook")
-#         return JsonResponse({"success": False, "error": "Internal server error."}, status=500)
+    except Exception as e:
+        logger.exception("Error processing webhook")
+        return JsonResponse({"success": False, "error": "Internal server error"}, status=500)
