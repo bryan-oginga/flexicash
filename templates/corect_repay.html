@@ -3,16 +3,13 @@ from fleximembers.models import FlexiCashMember
 from loanapplication.models import MemberLoanApplication,LoanProduct
 from transactions.models import Transaction
 from decimal import Decimal
-# from lipanampesa.utils import initiate_stk_push  # Import the function to trigger STK Push
 from django.utils import timezone
 import logging
-
 from django.http import JsonResponse
 from intasend import APIService
 import logging
 from django.conf import settings
 
-# Initialize IntaSend APIService with sandbox/test mode enabled
 service = APIService(token=settings.INSTASEND_SECRET_KEY, 
                      publishable_key=settings.INSTASEND_PUBLISHABLE_KEY, 
                      test=True)
@@ -47,6 +44,7 @@ def repay_loan_handler(request, session_id, phone_number, text):
                         response = f"END Amount exceeds your  loan  balance of : {loan.outstanding_balance}."
                     else:
                         response = f"END STK Push has been initiated successfully."
+                        
                         stk_response = service.collect.mpesa_stk_push(
                             phone_number='254799043853',
                             # phone_number=member.phone.lstrip('+'),
@@ -54,20 +52,26 @@ def repay_loan_handler(request, session_id, phone_number, text):
                             amount=float(loan.outstanding_balance),
                             narrative=loan.application_ref
                             )
+                        
                         print(stk_response)
                         invoice_id = stk_response['invoice']['invoice_id']
+                        amount_paid = stk_response['invoice']['net_amount']
+                        state = stk_response['invoice']['state']
+                        
                         if invoice_id:
                             print("This is the invoice Id : ",invoice_id)
-                        # Create transaction record
+
                             Transaction.objects.create(
-                            member=member, 
-                            loan=loan, 
-                            amount=amount, 
-                            transaction_type="Repayment",
-                            repayment_type = "Full"
+                                member=member, 
+                                loan=loan, 
+                                amount=float(amount_paid), 
+                                transaction_type="Repayment",
+                                repayment_type = "Full",
+                                narrative = invoice_id,
+                                status = state,
                             
                         )
-                        # response = "END Your loan has been fully repaid. Thank you! STK Push initiated, awaiting confirmation."
+
                         else:
                             response = "END Payment initiation failed. Please try again."
 
@@ -98,11 +102,8 @@ def repay_loan_handler(request, session_id, phone_number, text):
                             phone_number='254799043853',
                             amount=float(amount),
                             narrative=loan.application_ref
-
-                            # phone_number=member.phone.lstrip('+'),
-                            # email=member.email,
-                            # narrative=loan.application_ref
                             )
+                        print("This is the response : ",stk_response)
 
                         invoice_id = stk_response['invoice']['invoice_id']
                         amount_paid = stk_response['invoice']['net_amount']
@@ -110,7 +111,9 @@ def repay_loan_handler(request, session_id, phone_number, text):
                         account = stk_response['invoice']['account']
                         
                         if invoice_id:
-                            print("This is the invoice Id : ",invoice_id)
+                            status_response = service.collect.status(invoice_id=invoice_id)
+                            print("This is the status response : ",status_response)
+
                             # Create transaction record
                             Transaction.objects.create(
                                 member=member, 

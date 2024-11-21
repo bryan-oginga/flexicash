@@ -31,7 +31,7 @@ def generate_qr_code(member, period):
     # Create QR code content with member details and loan information
     qr_content = (
         f"Member: {member.first_name} {member.last_name}, "
-        f"Loan ID: {active_loan.application_id}, "
+        f"Loan ID: {active_loan.application_ref}, "
         f"Period: {period} months"
     )
 

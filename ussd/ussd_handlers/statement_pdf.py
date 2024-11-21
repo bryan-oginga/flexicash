@@ -25,13 +25,14 @@ def create_statement_pdf(member, transactions, period, request):
         'period': period,
         'date': transactions[0].date.strftime('%Y-%m-%d') if transactions else "",
         'qr_image_path': qr_image_path,  # Path to QR code image
-        'loan_id': active_loan.application_id,
+        'loan_id': active_loan.application_ref,
         'loan_type': active_loan.loan_product.name,
         'member_id': member.membership_number,
         'total_paid': sum(t.amount for t in transactions if t.transaction_type == 'Repayment'),
         'current_balance': current_balance,  # Display current balance in PDF
     })
 
+    # Define CSS for PDF styling
     # Define CSS for PDF styling
     css = CSS(string=''' 
         @page { size: A4 portrait; margin: 1mm 3mm; }

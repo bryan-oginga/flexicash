@@ -1,17 +1,61 @@
-<!-- initiate_payment.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Initiate Payment</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M-Pesa Payment</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
 </head>
 <body>
-    <h1>Initiate Payment with M-Pesa</h1>
-    <form method="post" action="{% url 'payment:initiate_payment' %}">
-        {% csrf_token %}
-      
+    <div class="container mt-5">
+        <h2 class="text-center">M-Pesa Payment Form</h2>
+        <form id="payment-form" method="POST" action="{% url 'payment:initiate_payment' %}">
+            {% csrf_token %}
+            
+            <div class="mb-3">
+                <label for="phone_number" class="form-label">Phone Number</label>
+                <input 
+                    type="text" 
+                    class="form-control" 
+                    id="phone_number" 
+                    name="phone_number" 
+                    placeholder="Enter your M-Pesa phone number (e.g., 254712345678)" 
+                    required>
+            </div>
 
-        <button type="submit">Pay with M-Pesa</button>
-    </form>
+            <div class="mb-3">
+                <label for="amount" class="form-label">Amount</label>
+                <input 
+                    type="number" 
+                    class="form-control" 
+                    id="amount" 
+                    name="amount" 
+                    placeholder="Enter the amount (KES)" 
+                    step="0.01" 
+                    min="1" 
+                    required>
+            </div>
+
+              <div class="mb-3">
+                <label for="amount" class="form-label">Account Number</label>
+                <input 
+                    type="text" 
+                    class="form-control" 
+                    id="account_no" 
+                    name="account_no" 
+                    placeholder="Enter Account Number"  
+                    step="0.01" 
+                    required>
+            </div>
+
+          
+           
+            <button type="submit" class="btn btn-primary w-100">Submit Payment</button>
+        </form>
+    </div>
+
+    <script>
+        // Optional: Add form validation or AJAX submission here
+    </script>
 </body>
 </html>

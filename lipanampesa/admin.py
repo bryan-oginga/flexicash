@@ -1,20 +1,51 @@
-# from django.contrib import admin
-# from .models import LoanMpesaTransaction
+from django.contrib import admin
+from django.utils.html import format_html
+from django.db import models
+from .models import MPesaTransaction
 
-# class LoanMpesaTransactionAdmin(admin.ModelAdmin):
-#     list_display = ('invoice_id', 'phone_number', 'amount', 'state', 'email', 'created_at')  # Display key fields
-#     list_filter = ('state', 'amount')  # Add filters for easy sorting
-#     search_fields = ('invoice_id', 'phone_number', 'email')  # Enable search by invoice ID, phone number, and email
-#     ordering = ('-created_at',)  # Default ordering by the created date (newest first)
-#     date_hierarchy = 'created_at'  # Add date hierarchy for easy navigation
-#     readonly_fields = ('invoice_id', 'phone_number', 'email', 'amount', 'narrative', 'state')  # Make fields read-only if needed
-#     list_per_page = 20  # Display a maximum of 20 records per page
+class MpesaPesaTransactionAdmin(admin.ModelAdmin):
+    # Display fields in the list view
+    list_display = ('external_reference', 'amount', 'phone_number', 'payment_status_color', 'status', 'initiated_at', 'completed_at')
     
-#     def save_model(self, request, obj, form, change):
-#         # Optionally, you can add custom behavior when saving a model, such as auto-filling or logging
-#         if not obj.invoice_id:  # Ensure invoice_id is set before saving
-#             obj.invoice_id = f"INV-{obj.pk}"  # Example: Generate an invoice ID based on the primary key
-#         super().save_model(request, obj, form, change)
+    # Search functionality
+    search_fields = ['external_reference', 'phone_number', 'amount']
+    
+    # Filters
+    list_filter = ['payment_status', 'status', 'initiated_at']
+    
+    # Fieldset to organize the form layout in the admin view
+    fieldsets = (
+        (None, {
+            'fields': ('external_reference', 'amount', 'phone_number', 'channel_id')
+        }),
+        ('Payment Information', {
+            'fields': ('payment_status', 'result_code', 'mpesa_receipt_number', 'status', 'completed_at')
+        }),
+    )
+    
+    # Custom display for payment_status in the list view
+    def payment_status_color(self, obj):
+        """Color code the payment status for easy visibility"""
+        if obj.payment_status == 'COMPLETED':
+            return format_html('<span style="color: green;">{}</span>', obj.payment_status)
+        elif obj.payment_status == 'FAILED':
+            return format_html('<span style="color: red;">{}</span>', obj.payment_status)
+        elif obj.payment_status == 'QUEUED':
+            return format_html('<span style="color: orange;">{}</span>', obj.payment_status)
+        return format_html('<span>{}</span>', obj.payment_status)
 
-# # Register the model with the custom admin
-# admin.site.register(LoanMpesaTransaction, LoanMpesaTransactionAdmin)
+    payment_status_color.short_description = 'Payment Status'
+
+    # Custom actions: Mark as completed
+    def mark_as_completed(self, request, queryset):
+        """Custom action to mark payments as completed"""
+        updated = queryset.update(status='COMPLETED', completed_at=models.F('initiated_at'))
+        self.message_user(request, f'{updated} transactions marked as completed.')
+
+    mark_as_completed.short_description = "Mark selected as completed"
+    
+    # Add custom actions to the admin panel
+    actions = ['mark_as_completed']
+
+# Register the model and custom admin
+admin.site.register(MPesaTransaction, MpesaPesaTransactionAdmin)

@@ -46,7 +46,7 @@ def handle_loan_balance(sender, instance, created, **kwargs):
                     loan.loan_status = 'Closed'
                 else:
                     loan.payment_complete = False
-                    loan.loan_status = 'Pending'
+                    # loan.loan_status = 'Open'
 
                 loan.save()
                
