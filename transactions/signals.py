@@ -7,7 +7,6 @@ from decimal import Decimal
 from .models import Transaction
 from loanapplication.models import MemberLoanApplication
 from fleximembers.models import FlexiCashMember
-from django.db.models import Case, When, Value, DecimalField, BooleanField
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -16,85 +15,74 @@ logger = logging.getLogger(__name__)
 def handle_loan_balance(sender, instance, created, **kwargs):
     logger.info(f"Transaction Post-Save Signal Triggered for Transaction ID: {instance.invoice_id}")
     
-    # Check if transaction is created and the type is 'Repayment'
-    if created:
-        logger.info(f"New Transaction Created: {instance.invoice_id} - Type: {instance.transaction_type}")
-    else:
-        logger.info(f"Transaction {instance.invoice_id} updated, but not created.")
+    # Check if transaction is newly created and of type 'Repayment'
+    if not created or instance.transaction_type != 'Repayment':
+        logger.info(f"Transaction {instance.invoice_id} is not a new repayment, skipping balance update.")
+        return
 
-    if instance.transaction_type == 'Repayment':
-        logger.info(f"Repayment detected for Transaction {instance.invoice_id}")
+    logger.info(f"Processing repayment for Transaction {instance.invoice_id}")
 
-        # Log the member and loan details
-        try:
-            member = instance.member
-            loan = instance.loan
-            amount = Decimal(instance.amount)
-            repayment_type = instance.repayment_type
+    try:
+        # Retrieve necessary details
+        member = instance.member
+        loan = instance.loan
+        amount = Decimal(instance.amount)
+        repayment_type = instance.repayment_type
 
-            logger.info(f"Member: {member.phone} - Balance before repayment: {member.member_balance}")
-            logger.info(f"Loan ID: {loan.id} - Outstanding Balance before repayment: {loan.outstanding_balance}")
-            logger.info(f"Repayment amount: {amount} - Repayment Type: {repayment_type}")
+        logger.info(f"Member: {member.first_name} - Initial Balance: {member.member_balance}")
+        logger.info(f"Loan ID: {loan.id} - Initial Outstanding Balance: {loan.outstanding_balance}")
+        logger.info(f"Repayment Amount: {amount} - Repayment Type: {repayment_type}")
 
-            # Ensure repayment amount is not zero
-            if amount <= 0:
-                logger.warning(f"Repayment amount is zero or negative for transaction {instance.invoice_id}")
-                return
+        # Ensure repayment amount is valid
+        if amount <= 0:
+            logger.warning(f"Repayment amount is zero or negative for Transaction {instance.invoice_id}. Skipping.")
+            return
 
-            # Start a transaction block to ensure database consistency
-            with transaction.atomic():
-                if repayment_type == 'Full':
-                    logger.info(f"Handling full repayment for Transaction {instance.invoice_id}")
+        # Start an atomic transaction for consistency
+        with transaction.atomic():
+            if repayment_type == 'Full':
+                logger.info(f"Handling full repayment for Transaction {instance.invoice_id}")
 
-                    # Update member balance to zero for full repayment
-                    member.member_balance = Decimal('0.00')
-                    logger.info(f"Member balance updated to: {member.member_balance}")
-                    member.save()
+                # Update balances for full repayment
+                FlexiCashMember.objects.filter(id=member.id).update(member_balance=Decimal('0.00'))
+                MemberLoanApplication.objects.filter(id=loan.id).update(
+                    outstanding_balance=Decimal('0.00'),
+                    payment_complete=True,
+                    loan_status='Closed'
+                )
+                logger.info(f"Full repayment processed: Member and loan balances set to zero.")
 
-                    # Update loan outstanding balance to zero and mark as closed
-                    loan.outstanding_balance = Decimal('0.00')
-                    loan.payment_complete = True
-                    loan.loan_status = 'Closed'
-                    logger.info(f"Loan outstanding balance updated to: {loan.outstanding_balance} - Loan Status: {loan.loan_status}")
-                    loan.save()
+            elif repayment_type == 'Partial':
+                logger.info(f"Handling partial repayment for Transaction {instance.invoice_id}")
 
-                elif repayment_type == 'Partial':
-                    logger.info(f"Handling partial repayment for Transaction {instance.invoice_id}")
+                # Deduct repayment amount from member balance and loan outstanding balance
+                FlexiCashMember.objects.filter(id=member.id).update(member_balance=F('member_balance') - amount)
+                MemberLoanApplication.objects.filter(id=loan.id).update(outstanding_balance=F('outstanding_balance') - amount)
 
-                    # Decrease member's balance by the repayment amount
-                    member.member_balance = F('member_balance') - amount
-                    logger.info(f"Member balance updated to: {member.member_balance}")
-                    member.save()
-
-                    # Decrease the loan's outstanding balance
-                    loan.outstanding_balance = max(loan.outstanding_balance - amount, Decimal('0.00'))
-                    logger.info(f"Loan outstanding balance updated to: {loan.outstanding_balance}")
-
-                    # Check if loan is fully repaid and update status
-                    if loan.outstanding_balance == Decimal('0.00'):
-                        loan.payment_complete = True
-                        loan.loan_status = 'Closed'
-                        logger.info(f"Loan marked as completed and closed for transaction {instance.invoice_id}")
-                    else:
-                        loan.payment_complete = False
-                        loan.loan_status = 'Open'
-                        logger.info(f"Loan remains open for transaction {instance.invoice_id}")
-
-                    loan.save()
-
-                else:
-                    logger.warning(f"Unknown repayment type '{repayment_type}' for transaction {instance.invoice_id}")
-
-                # Refresh member and loan from DB to ensure we have the latest data
+                # Refresh objects from the database to get updated values
                 member.refresh_from_db()
                 loan.refresh_from_db()
 
-                logger.info(f"Transaction {instance.invoice_id} processed successfully.")
-        
-        except Exception as e:
-            logger.error(f"Error processing repayment for Transaction {instance.invoice_id}: {str(e)}")
-            # Optionally, you can raise an error to stop further processing if needed
-            raise e
+                logger.info(f"Updated Member Balance: {member.member_balance}")
+                logger.info(f"Updated Loan Outstanding Balance: {loan.outstanding_balance}")
 
-    else:
-        logger.info(f"Transaction {instance.invoice_id} is not a repayment, skipping balance update.")
+                # Check if loan is fully repaid
+                if loan.outstanding_balance <= Decimal('0.00'):
+                    loan.payment_complete = True
+                    loan.loan_status = 'Closed'
+                    logger.info(f"Loan fully repaid and closed.")
+                else:
+                    loan.payment_complete = False
+                    loan.loan_status = 'Open'
+                    logger.info(f"Loan remains open.")
+
+                # Save loan status changes
+                loan.save()
+            else:
+                logger.warning(f"Unknown repayment type '{repayment_type}' for Transaction {instance.invoice_id}. Skipping.")
+
+        logger.info(f"Transaction {instance.invoice_id} processed successfully.")
+    
+    except Exception as e:
+        logger.error(f"Error processing repayment for Transaction {instance.invoice_id}: {str(e)}")
+        raise e
