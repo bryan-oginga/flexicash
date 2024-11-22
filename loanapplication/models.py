@@ -77,7 +77,7 @@ class MemberLoanApplication(models.Model):
         if not self.application_ref:
             self.application_ref = f"FLP-{self.pk:05}" if self.pk else f"FLP-{MemberLoanApplication.objects.count() + 1:05}"
     
-    # Set disbursement details
+    # Set disbursement date details
         if self.loan_status == "Disbursed":
             if not self.disbursement_date:
                 self.disbursement_date = timezone.now().date()  # Ensure disbursement_date is set

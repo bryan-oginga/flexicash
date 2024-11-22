@@ -25,7 +25,7 @@ INSTALLED_APPS = [
     
     'rest_framework',
     'phonenumber_field',
-    'django_celery_beat',
+    # 'django_celery_beat',
 
    
 ]
@@ -117,18 +117,6 @@ INTASEND_PUBLISHABLE_KEY = 'ISPubKey_test_7c58de8a-2340-4b9d-af0e-1d2b479086c2'
 INTASEND_SECRET_KEY = 'ISSecretKey_test_4532c33f-e7f2-403b-9a35-7b69f7ba659b'
 INTASEND_CHALLENGE_TOKEN = "xtfzlyicegpxjnho"
 INTASEND_WEBHOOK_URL = 'https://f7c2-41-212-105-164.ngrok-free.app/payment/intasend-webhook/'
-
-TINYPESA_API_KEY = "hxIAKK4Ab9h9NXSQJ1qEMN-HJ5NTeeawnU169GA0Cw8vVCD0DJ"  # Replace with your API key
-TINYPESA_USERNAME = "ogingabrian2017@gmail.com"  # Replace with your username
-TINYPESA_BASE_URL = "https://tinypesa.com/api/v1"
-
-PAYHERO_PASSWORD = "kuxgCdwDPvC14WPeHvmY8xI4dRDD2QYT6NzgdsNW"
-PAYHERO_USERNAME = "EAk1cW0ondlYisBqcn41"
-PAYHERO_ACCOUNT_ID  = "1052"
-PAYHERO_CHANNEL_ID  = "1058"
-PAYHERO_ENDPOINT_URL = 'https://backend.payhero.co.ke/api/v2/payments'
-PAYHERO_CALLBACK_URL = 'https://f7c2-41-212-105-164.ngrok-free.app/payment/payhero_callback/'
-
 
 
 

@@ -9,7 +9,8 @@
 <body>
     <div class="container mt-5">
         <h2 class="text-center">M-Pesa Payment Form</h2>
-        <form id="payment-form" method="POST" action="{% url 'payment:initiate_payment' %}">
+        <form id="payment-form" method="POST" action="">
+        {% comment %} <form id="payment-form" method="POST" action="{% url 'payment:initiate_payment' %}"> {% endcomment %}
             {% csrf_token %}
             
             <div class="mb-3">

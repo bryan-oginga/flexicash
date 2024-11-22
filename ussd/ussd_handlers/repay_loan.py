@@ -3,7 +3,6 @@ from fleximembers.models import FlexiCashMember
 from loanapplication.models import MemberLoanApplication,LoanProduct
 from transactions.models import Transaction
 from decimal import Decimal
-# from lipanampesa.utils import initiate_stk_push  # Import the function to trigger STK Push
 from django.utils import timezone
 import logging
 from django.http import JsonResponse
@@ -44,27 +43,41 @@ def repay_loan_handler(request, session_id, phone_number, text):
                         response = f"END Amount exceeds your  loan  balance of : {loan.outstanding_balance}."
                     else:
                         response = f"END STK Push has been initiated successfully."
+                        
+                        member_phone = member.phone.lstrip('+')
+                        print("This is the memebers phone number : ",member_phone)
+                        member_email = member.email
+                        print("This is the members email : ",member_email)
+                        
                         stk_response = service.collect.mpesa_stk_push(
-                            phone_number='254799043853',
-                            # phone_number=member.phone.lstrip('+'),
-                            email=member.email,
+                            phone_number=member_phone,
                             amount=float(loan.outstanding_balance),
-                            narrative=loan.application_ref
-                            )
+                            narrative=loan.application_ref,
+                            email=member.email,
+                        )
+                        
+                        
                         print(stk_response)
                         invoice_id = stk_response['invoice']['invoice_id']
+                        amount_paid = stk_response['invoice']['net_amount']
+                        state = stk_response['invoice']['state']
+                        account = stk_response['invoice']['account']
+                        
+                        
                         if invoice_id:
                             print("This is the invoice Id : ",invoice_id)
-                        # Create transaction record
                             Transaction.objects.create(
-                            member=member, 
-                            loan=loan, 
-                            amount=amount, 
-                            transaction_type="Repayment",
-                            repayment_type = "Full"
-                            
+                                member=member, 
+                                loan=loan, 
+                                amount=float(amount_paid), 
+                                transaction_type="Repayment",
+                                repayment_type = "Partial",
+                                narrative = invoice_id,
+                                state = state,
+                                invoice_id= invoice_id,
+                                phone_number = account,
+                                email = member_email,
                         )
-                        # response = "END Your loan has been fully repaid. Thank you! STK Push initiated, awaiting confirmation."
                         else:
                             response = "END Payment initiation failed. Please try again."
 
@@ -91,21 +104,25 @@ def repay_loan_handler(request, session_id, phone_number, text):
                     else:
                         # Initiate STK Push for partial repayment
                         response = f"END STK Push has been initiated successfully."
-                        stk_response  = service.collect.mpesa_stk_push(
-                            phone_number='254799043853',
+                        
+                        member_phone = member.phone.lstrip('+')
+                        print("This is the memebers phone number : ",member_phone)
+                        member_email = member.email
+                        print("This is the members email : ",member_email)
+
+                        
+                        stk_response = service.collect.mpesa_stk_push(
+                            phone_number=member_phone,
                             amount=float(amount),
-                            narrative=loan.application_ref
-
-                            # phone_number=member.phone.lstrip('+'),
-                            # email=member.email,
-                            # narrative=loan.application_ref
-                            )
-
+                            narrative=loan.application_ref,
+                            email=member_email,
+                        )
+                        
                         invoice_id = stk_response['invoice']['invoice_id']
                         amount_paid = stk_response['invoice']['net_amount']
                         state = stk_response['invoice']['state']
                         account = stk_response['invoice']['account']
-                        
+                                               
                         if invoice_id:
                             print("This is the invoice Id : ",invoice_id)
                             # Create transaction record
@@ -116,8 +133,11 @@ def repay_loan_handler(request, session_id, phone_number, text):
                                 transaction_type="Repayment",
                                 repayment_type = "Partial",
                                 narrative = invoice_id,
-                                status = state,
-                                
+                                state = state,
+                                invoice_id= invoice_id,
+                                phone_number = account,
+                                email = member_email,
+                                     
                             )
                             # response = f"END Partial repayment of {amount} has been received. Remaining balance is {loan.outstanding_balance}."
                         else:

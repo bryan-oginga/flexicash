@@ -70,6 +70,7 @@ def update_member_loan_status(sender, instance, **kwargs):
         logger.info(f"Updated loan application {instance.application_ref} to status {new_status}")
 
 
+#update the Flexicashmember balance to total repayment on disbursement
 @receiver(post_save, sender=MemberLoanApplication)
 def update_member_balance(sender, instance, created, **kwargs):
     if instance.loan_status == 'Disbursed':
