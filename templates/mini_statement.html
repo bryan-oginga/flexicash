@@ -21,7 +21,11 @@
           <div class="cs-invoice_head cs-type1 cs-mb25">
             <div class="cs-invoice_left">
               <div class="cs-logo cs-mb5">
-                <img src="{{ qr_image_path }}" alt="Logo" />
+                {% comment %} <img src="{{ qr_image_path }}" alt="Logo" /> {% endcomment %}
+                 <img
+                  src="{{ base_url }}{% static 'sassets/img/qr.png' %}"
+                  alt="Logo"
+                />
               </div>
               <p class="cs-invoice_number cs-primary_color cs-mb0 cs-f16">
                 <b class="cs-primary_color">REF N0:</b> #{{loan_id}}
