@@ -39,6 +39,9 @@ INSTALLED_APPS = [
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
 MIDDLEWARE = [
+    
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Add this line
+    'django.middleware.security.SecurityMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -69,13 +72,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'flexicash.wsgi.application'
 
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
 
 
 DATABASES = {
@@ -124,13 +120,6 @@ EMAIL_HOST_PASSWORD =  'xtfzlyicegpxjnho'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = 'Flexipay Team <noreply@sendify.com>'
-
-
-# development settings
-# INTASEND_PUBLISHABLE_KEY = 'ISPubKey_test_7c58de8a-2340-4b9d-af0e-1d2b479086c2'
-# INTASEND_SECRET_KEY = 'ISSecretKey_test_4532c33f-e7f2-403b-9a35-7b69f7ba659b'
-# INTASEND_CHALLENGE_TOKEN = "xtfzlyicegpxjnho"
-# # INTASEND_WEBHOOK_URL = 'https://f7c2-41-212-105-164.ngrok-free.app/payment/intasend-webhook/'
 
 
 # production settings
