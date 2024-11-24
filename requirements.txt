@@ -29,10 +29,12 @@ djangorestframework==3.15.2
 flower==2.0.1
 fonttools==4.54.1
 fpdf2==2.8.1
+gunicorn==23.0.0
 humanize==4.11.0
 idna==3.10
 intasend-python==1.1.2
 kombu==5.4.2
+packaging==24.2
 phonenumbers==8.13.49
 pillow==10.4.0
 prometheus_client==0.21.0
