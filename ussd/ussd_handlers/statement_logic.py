@@ -22,7 +22,7 @@ def calculate_balance(transactions):
 
 def generate_qr_code(member, period):
     # Retrieve the most recent active loan for the member, if any
-    active_loan = member.loans.filter(loan_status__in=["Disbursed", "Approved"]).first()
+    active_loan = member.loans.filter(loan_status__in=["Approved"]).first()
     
     # If there’s no active loan, handle accordingly
     if not active_loan:

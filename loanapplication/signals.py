@@ -29,7 +29,7 @@ def populate_loan_details(sender, instance, **kwargs):
         ).quantize(Decimal("0.00"))
 
         # Calculate penalty only for disbursed loans
-        if instance.loan_status == "Disbursed" and instance.due_date:
+        if instance.loan_status == "Approved" and instance.due_date:
             if instance.due_date < timezone.now().date():
                 instance.loan_penalty = (instance.total_repayment * Decimal(0.20)).quantize(Decimal("0.00"))
             else:
@@ -37,7 +37,7 @@ def populate_loan_details(sender, instance, **kwargs):
         else:
             instance.loan_penalty = Decimal(0)
             
-        if instance.loan_status == 'Disbursed':
+        if instance.loan_status == 'Approved':
             instance.outstanding_balance = instance.total_repayment
 
     else:
@@ -52,11 +52,9 @@ def update_member_loan_status(sender, instance, **kwargs):
     
     # Define a mapping only if necessary
     status_mapping = {
-        'Approved': 'Approved',
-        'Rejected': 'Rejected',
-        'Disbursed': 'Disbursed',
-        'Closed': 'Closed',
-        'Pending': 'Pending',
+        ('Pending', 'Pending'),
+        ('Approved', 'Approved'),
+        ('Closed', 'Closed'),
     }
 
     # Check if the status needs updating
@@ -73,7 +71,7 @@ def update_member_loan_status(sender, instance, **kwargs):
 #update the Flexicashmember balance to total repayment on disbursement
 @receiver(post_save, sender=MemberLoanApplication)
 def update_member_balance(sender, instance, created, **kwargs):
-    if instance.loan_status == 'Disbursed':
+    if instance.loan_status == 'Approved':
         try:
             flexicash_member = FlexiCashMember.objects.get(email=instance.member.email)
             flexicash_member.member_balance = instance.total_repayment

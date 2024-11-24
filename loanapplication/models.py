@@ -47,8 +47,6 @@ class MemberLoanApplication(models.Model):
     LOAN_STATUS_CHOICES = [
         ('Pending', 'Pending'),
         ('Approved', 'Approved'),
-        ('Disbursed', 'Disbursed'), 
-        ('Rejected', 'Rejected'),
         ('Closed', 'Closed'),
     ]
 
@@ -78,9 +76,10 @@ class MemberLoanApplication(models.Model):
             self.application_ref = f"FLP-{self.pk:05}" if self.pk else f"FLP-{MemberLoanApplication.objects.count() + 1:05}"
     
     # Set disbursement date details
-        if self.loan_status == "Disbursed":
+        if self.loan_status == "Approved":
             if not self.disbursement_date:
-                self.disbursement_date = timezone.now().date()  # Ensure disbursement_date is set
+                self.disbursement_date = datetime.date()  # Ensure disbursement_date is set
+                    
             
 
         if self.disbursement_date and not self.due_date:

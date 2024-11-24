@@ -8,7 +8,7 @@ from django.conf import settings
 
 def create_statement_pdf(member, transactions, period, request):
     # Retrieve an active loan to include in the statement
-    active_loan = member.loans.filter(loan_status__in=["Disbursed", "Approved"]).first()
+    active_loan = member.loans.filter(loan_status__in=["Approved","Active"]).first()
     if not active_loan:
         raise ValueError("No active loan found for the member.")
 

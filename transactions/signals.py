@@ -8,15 +8,7 @@ from django.db import transaction
 from .models import Transaction
 from loanapplication.models import MemberLoanApplication
 from fleximembers.models import FlexiCashMember
-
 import logging
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from django.db import transaction
-from decimal import Decimal
-from .models import Transaction
-from loanapplication.models import MemberLoanApplication
-from fleximembers.models import FlexiCashMember
 
 logger = logging.getLogger(__name__)
 
@@ -81,9 +73,9 @@ def process_transaction(instance):
                 if loan.outstanding_balance <= Decimal('0.00'):
                     loan.payment_complete = True
                     loan.loan_status = 'Closed'
-                else:
-                    loan.payment_complete = False
-                    loan.loan_status = 'Open'
+                # else:
+                #     loan.payment_complete = False
+                #     loan.loan_status = 'Active'
                 loan.save()
             else:
                 logger.error(f"Unknown repayment type '{repayment_type}' for Transaction {instance.invoice_id}. Skipping.")
