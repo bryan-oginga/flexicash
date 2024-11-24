@@ -1,11 +1,17 @@
 import os
 from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = 'django-insecure-50#5$pbme&ajmg%r-c2hlsec(74lqg#69o%)x24)&yj+d$365n'
 DEBUG = True
 import dj_database_url
+from dotenv import load_dotenv
+load_dotenv()
 
+SECRET_KEY =  os.getenv('SECRET_KEY')
 ALLOWED_HOSTS = ['flexicash-7b2ddc94d56c.herokuapp.com','localhost','127.0.0.1',]
+
+if os.getenv('DJANGO_ENV') != 'production':
+    load_dotenv()
+
 
 INSTALLED_APPS = [
     
@@ -26,7 +32,6 @@ INSTALLED_APPS = [
     
     'rest_framework',
     'phonenumber_field',
-    'psycopg2-binary',
     # 'django_celery_beat',
 
    
@@ -76,7 +81,7 @@ WSGI_APPLICATION = 'flexicash.wsgi.application'
 DATABASES = {
     'default': dj_database_url.config()
 }
-
+DATABASE_URL = os.getenv('DATABASE_URL')
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -129,10 +134,10 @@ DEFAULT_FROM_EMAIL = 'Flexipay Team <noreply@sendify.com>'
 
 
 # production settings
-INTASEND_PUBLISHABLE_KEY = 'ISPubKey_live_f288cee9-b2a7-482b-a530-76a49b10a954'
-INTASEND_SECRET_KEY = 'ISSecretKey_live_75379d8e-222e-4a9b-96ee-5ada0743c2fc'
-INTASEND_CHALLENGE_TOKEN = "xtfzlyicegpxjnho"
-INTASEND_WEBHOOK_URL = 'https://flexicash-7b2ddc94d56c.herokuapp.com/payment/intasend-webhook/'
+INTASEND_PUBLISHABLE_KEY = os.getenv('INTASEND_PUBLISHABLE_KEY')
+INTASEND_SECRET_KEY = os.getenv('INTASEND_SECRET_KEY')
+INTASEND_CHALLENGE_TOKEN = os.getenv('INTASEND_CHALLENGE_TOKEN')
+INTASEND_WEBHOOK_URL = os.getenv('INTASEND_WEBHOOK_URL')
 
 
 
