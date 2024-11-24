@@ -3,8 +3,9 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-50#5$pbme&ajmg%r-c2hlsec(74lqg#69o%)x24)&yj+d$365n'
 DEBUG = True
+import dj_database_url
 
-ALLOWED_HOSTS = ['f7c2-41-212-105-164.ngrok-free.app','localhost','127.0.0.1',]
+ALLOWED_HOSTS = ['flexicash-7b2ddc94d56c.herokuapp.com','localhost','127.0.0.1',]
 
 INSTALLED_APPS = [
     
@@ -25,6 +26,7 @@ INSTALLED_APPS = [
     
     'rest_framework',
     'phonenumber_field',
+    'psycopg2-binary',
     # 'django_celery_beat',
 
    
@@ -63,11 +65,16 @@ TEMPLATES = [
 WSGI_APPLICATION = 'flexicash.wsgi.application'
 
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config()
 }
 
 
@@ -113,10 +120,19 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = 'Flexipay Team <noreply@sendify.com>'
 
-INTASEND_PUBLISHABLE_KEY = 'ISPubKey_test_7c58de8a-2340-4b9d-af0e-1d2b479086c2'
-INTASEND_SECRET_KEY = 'ISSecretKey_test_4532c33f-e7f2-403b-9a35-7b69f7ba659b'
+
+# development settings
+# INTASEND_PUBLISHABLE_KEY = 'ISPubKey_test_7c58de8a-2340-4b9d-af0e-1d2b479086c2'
+# INTASEND_SECRET_KEY = 'ISSecretKey_test_4532c33f-e7f2-403b-9a35-7b69f7ba659b'
+# INTASEND_CHALLENGE_TOKEN = "xtfzlyicegpxjnho"
+# # INTASEND_WEBHOOK_URL = 'https://f7c2-41-212-105-164.ngrok-free.app/payment/intasend-webhook/'
+
+
+# production settings
+INTASEND_PUBLISHABLE_KEY = 'ISPubKey_live_f288cee9-b2a7-482b-a530-76a49b10a954'
+INTASEND_SECRET_KEY = 'ISSecretKey_live_75379d8e-222e-4a9b-96ee-5ada0743c2fc'
 INTASEND_CHALLENGE_TOKEN = "xtfzlyicegpxjnho"
-INTASEND_WEBHOOK_URL = 'https://f7c2-41-212-105-164.ngrok-free.app/payment/intasend-webhook/'
+INTASEND_WEBHOOK_URL = 'https://flexicash-7b2ddc94d56c.herokuapp.com/payment/intasend-webhook/'
 
 
 
