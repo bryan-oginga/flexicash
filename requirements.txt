@@ -15,6 +15,7 @@ colorama==0.4.6
 cron-descriptor==1.4.5
 cssselect2==0.7.0
 defusedxml==0.7.1
+dj-database-url==2.3.0
 Django==5.1.2
 django-appconf==1.0.6
 django-celery-beat==2.7.0
@@ -36,6 +37,7 @@ phonenumbers==8.13.49
 pillow==10.4.0
 prometheus_client==0.21.0
 prompt_toolkit==3.0.48
+psycopg2-binary==2.9.10
 pycparser==2.22
 pydyf==0.11.0
 PyPDF2==3.0.1
@@ -52,6 +54,7 @@ sqlparse==0.5.1
 tinycss2==1.4.0
 tinyhtml5==2.0.0
 tornado==6.4.1
+typing_extensions==4.12.2
 tzdata==2024.2
 urllib3==2.2.3
 vine==5.1.0
