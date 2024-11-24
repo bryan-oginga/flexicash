@@ -78,7 +78,7 @@ class MemberLoanApplication(models.Model):
     # Set disbursement date details
         if self.loan_status == "Approved":
             if not self.disbursement_date:
-                self.disbursement_date = datetime.date()  # Ensure disbursement_date is set
+                self.disbursement_date = datetime.date.today()  # Ensure disbursement_date is set
                     
             
 
