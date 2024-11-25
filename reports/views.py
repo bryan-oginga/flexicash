@@ -16,6 +16,9 @@ def FlexicashDashboard(request):
     # Total loans disbursed
     total_loans_disbursed = MemberLoanApplication.objects.filter(Q(loan_status='Disbursed')|Q(loan_status='Closed')).\
         aggregate(Sum('principal_amount')).get('principal_amount__sum', 0)
+    
+    if total_loans_disbursed is None:
+        total_loans_disbursed = 0
      
     # Total payments received (with 'COMPLETE' state)
     payment_received = Transaction.objects.filter(state='COMPLETE') \

@@ -2,10 +2,7 @@ from django.db import models
 from fleximembers.models import FlexiCashMember
 from django.core.exceptions import ValidationError
 from datetime import timedelta
-from decimal import Decimal
 import logging
-from decimal import Decimal
-from django.utils import timezone
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
@@ -78,10 +75,8 @@ class MemberLoanApplication(models.Model):
     # Set disbursement date details
         if self.loan_status == "Approved":
             if not self.disbursement_date:
-                self.disbursement_date = datetime.date.today()  # Ensure disbursement_date is set
+                self.disbursement_date = datetime.today().date()  # Ensure disbursement_date is set
                     
-            
-
         if self.disbursement_date and not self.due_date:
             self.due_date = self.disbursement_date + timedelta(days=self.loan_product.loan_duration)
     

@@ -29,15 +29,15 @@ def populate_loan_details(sender, instance, **kwargs):
         ).quantize(Decimal("0.00"))
 
         # Calculate penalty only for disbursed loans
-        if instance.loan_status == "Approved" and instance.due_date:
-            if instance.due_date < timezone.now().date():
-                instance.loan_penalty = (instance.total_repayment * Decimal(0.20)).quantize(Decimal("0.00"))
-            else:
-                instance.loan_penalty = Decimal(0)
+        # Calculate penalty only for disbursed loans
+    if instance.loan_status == "Approved" and instance.due_date:
+        if instance.due_date < timezone.now().date():  # Ensure both are date objects for comparison
+            instance.loan_penalty = (instance.total_repayment * Decimal(0.20)).quantize(Decimal("0.00"))
         else:
             instance.loan_penalty = Decimal(0)
+      
             
-        if instance.loan_status == 'Approved':
+    if instance.loan_status == 'Approved':
             instance.outstanding_balance = instance.total_repayment
 
     else:

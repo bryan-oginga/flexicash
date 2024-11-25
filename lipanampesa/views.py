@@ -1,8 +1,5 @@
-from intasend import APIService
 from django.http import JsonResponse
-from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
-from django.shortcuts import render
 from django.conf import settings
 from transactions.models import Transaction
 import logging
@@ -19,6 +16,7 @@ intasend_webhook_url = settings.INTASEND_WEBHOOK_URL
 @csrf_exempt
 def intasend_webhook(request):
     try:
+        # We rerive the webhook resposne
         payload = json.loads(request.body.decode("utf-8"))
         challenge_token = payload.get('challenge')
         invoice_id = payload.get('invoice_id')
