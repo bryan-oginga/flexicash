@@ -50,8 +50,8 @@ def repay_loan_handler(request, session_id, phone_number, text):
                         print("This is the members email : ",member_email)
                         
                         stk_response = service.collect.mpesa_stk_push(
-                            phone_number='254799043853',
-                            # phone_number=member_phone,
+                            # phone_number='254799043853',
+                            phone_number=member_phone,
                             amount=float(loan.outstanding_balance),
                             narrative=loan.application_ref,
                             email=member.email,
@@ -113,8 +113,8 @@ def repay_loan_handler(request, session_id, phone_number, text):
 
                         
                         stk_response = service.collect.mpesa_stk_push(
-                            # phone_number=member_phone,
-                            phone_number='254799043853',
+                            phone_number=member_phone,
+                            # phone_number='254799043853',
                             amount=float(amount),
                             narrative=loan.application_ref,
                             email=member_email,
