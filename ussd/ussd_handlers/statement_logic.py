@@ -8,7 +8,7 @@ from django.conf import settings
 def get_transactions(member, period):
     """Retrieve transactions based on the given period in months."""
     start_date = timezone.now() - timedelta(days=period * 30)
-    return Transaction.objects.filter(member=member, date__gte=start_date)
+    return Transaction.objects.filter(member=member,state='COMPLETE',date__gte=start_date)
 
 def calculate_balance(transactions):
     """Calculate the loan balance based on disbursements and repayments."""
