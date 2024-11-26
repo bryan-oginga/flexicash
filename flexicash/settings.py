@@ -24,6 +24,8 @@ DATABASE_URL = os.getenv('DATABASE_URL')
 
 INSTALLED_APPS = [
     
+   "admin_interface",
+    "colorfield",    'material',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -42,10 +44,17 @@ INSTALLED_APPS = [
     
     'rest_framework',
     'phonenumber_field',
+    
 
    
 ]
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+
+MATERIAL_ADMIN = {
+    'PANEL_MODE': 'collapse',  # Choose between 'collapse' or 'stack'
+    'ADMIN_THEME': 'default',  # Options: 'default', 'dark', etc.
+}
+
 
 MIDDLEWARE = [
     

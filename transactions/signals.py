@@ -36,6 +36,7 @@ def process_transaction(instance):
         amount = Decimal(instance.amount)
         repayment_type = instance.repayment_type
 
+        # Debugging logs
         logger.debug(f"Member: {member.first_name} - Balance: {member.member_balance}")
         logger.debug(f"Loan ID: {loan.id} - Outstanding Balance: {loan.outstanding_balance}")
         logger.debug(f"Repayment Amount: {amount} - Repayment Type: {repayment_type}")
@@ -57,6 +58,7 @@ def process_transaction(instance):
         with transaction.atomic():
             if repayment_type == 'Full':
                 logger.info(f"Processing full repayment for Transaction {instance.invoice_id}.")
+                # Full repayment
                 FlexiCashMember.objects.filter(id=member.id).update(member_balance=Decimal('0.00'))
                 MemberLoanApplication.objects.filter(id=loan.id).update(
                     outstanding_balance=Decimal('0.00'),
@@ -65,18 +67,23 @@ def process_transaction(instance):
                 )
             elif repayment_type == 'Partial':
                 logger.info(f"Processing partial repayment for Transaction {instance.invoice_id}.")
+                # Partial repayment
                 FlexiCashMember.objects.filter(id=member.id).update(member_balance=F('member_balance') - amount)
                 MemberLoanApplication.objects.filter(id=loan.id).update(outstanding_balance=F('outstanding_balance') - amount)
 
                 # Refresh loan to check if fully repaid
                 loan.refresh_from_db()
+                logger.debug(f"Loan Outstanding Balance after partial repayment: {loan.outstanding_balance}")
                 if loan.outstanding_balance <= Decimal('0.00'):
+                    logger.info(f"Loan {loan.id} is fully repaid. Closing loan.")
                     loan.payment_complete = True
                     loan.loan_status = 'Closed'
-                # else:
-                #     loan.payment_complete = False
-                #     loan.loan_status = 'Active'
+                else:
+                    loan.payment_complete = False
+                    loan.loan_status = 'Active'
+
                 loan.save()
+
             else:
                 logger.error(f"Unknown repayment type '{repayment_type}' for Transaction {instance.invoice_id}. Skipping.")
 
