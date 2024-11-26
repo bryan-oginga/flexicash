@@ -116,10 +116,7 @@ def disburse_loan_on_approval(sender, instance, created, **kwargs):
                 "narrative": f"Loan disbursement for {member.membership_number}",  # Purpose of the payment
             }
 
-            # Initialize IntaSend APIService with credentials
-            token = "your_intasend_token"  # Replace with your actual token
-            private_key = "your_private_key"  # Replace with your private key
-            service = APIService(token=token, private_key=private_key)
+        
 
             # Initiate transfer
             response = service.transfer.mpesa(
@@ -132,7 +129,7 @@ def disburse_loan_on_approval(sender, instance, created, **kwargs):
             logger.info(f"IntaSend Initiate Response: {response}")
 
             # Handle approval if needed
-            if response.get("requires_approval", "NO") == "YES":
+            if response.get("requires_approval") == "YES":
                 approval_response = service.transfer.approve(response)
                 logger.info(f"IntaSend Approval Response: {approval_response}")
 
