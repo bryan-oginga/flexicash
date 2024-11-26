@@ -7,7 +7,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 SECRET_KEY =  os.getenv('SECRET_KEY')
-ALLOWED_HOSTS = ['flexicashloans-c23dce6087ea.herokuapp.com','localhost','127.0.0.1',]
+ALLOWED_HOSTS = \
+    ['flexicash-23ff5ac55c24.herokuapp.com',\
+    'localhost','127.0.0.1',]
 
 if os.getenv('DJANGO_ENV') != 'production':
     load_dotenv()
