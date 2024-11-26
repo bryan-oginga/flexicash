@@ -9,8 +9,6 @@ import json
 logger = logging.getLogger(__name__)
 
 challenge_token = settings.INTASEND_CHALLENGE_TOKEN
-intasend_webhook_url = settings.INTASEND_WEBHOOK_URL 
-
 
         
 @csrf_exempt
