@@ -1,2 +1,2 @@
-release: python manage.py collectstatic --no-input
+release: ./release.sh
 web: gunicorn flexicash.wsgi --log-file -
