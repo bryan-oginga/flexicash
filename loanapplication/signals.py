@@ -93,49 +93,59 @@ def update_member_loan_status(sender, instance, **kwargs):
 # from .models import MemberLoanApplication
 
 # Configure logging
+token = settings.INTASEND_SECRET_KEY
+service = APIService(token=token)
+
 @receiver(post_save, sender=MemberLoanApplication)
-def handle_loan_post_save(sender, instance, created, **kwargs):
+def handle_loan_disbursement(sender, instance, created, **kwargs):
     """
-    Handles loan disbursement and member balance update when a loan is approved.
+    Handles loan disbursement via IntaSend when a loan is approved.
     """
     if instance.loan_status == "Approved" and instance.disbursement_date is None:
         try:
-            # Update member balance
-            flexicash_member = FlexiCashMember.objects.get(email=instance.member.email)
-            flexicash_member.member_balance = instance.total_repayment
-            flexicash_member.save()
+            # Format the phone number for M-Pesa (ensure 254... format)
+            member_phone = instance.member.phone.lstrip('+').replace(' ', '')
+            if not member_phone.startswith("254"):
+                logger.error(f"Invalid phone format: {member_phone}")
+                return
 
-            # Disburse loan via IntaSend
-            member_phone = instance.member.phone.lstrip('+').replace(' ', '')  # Proper phone format
+            # Prepare transaction payload
             transaction = {
                 "name": instance.member.first_name,
-                "account": f"254{member_phone[1:]}",
+                "account": f"254{member_phone[1:]}",  # Ensure correct format
                 "amount": float(instance.principal_amount),
                 "narrative": f"Loan disbursement for {instance.member.membership_number}",
             }
 
+            logger.info(f"Initiating M-Pesa B2C for {instance.member.first_name}")
+
+            # Initiate disbursement
             response = service.transfer.mpesa(
                 currency="KES",
                 transactions=[transaction],
-                requires_approval="YES",
+                requires_approval="YES",  # Require approval for this transaction
             )
 
-            logger.info(f"IntaSend Response: {response}")
+            logger.info(f"Initiate Response: {response}")
+
+            # Handle approval if required
             if response.get("requires_approval") == "YES":
                 approval_response = service.transfer.approve(response)
+                logger.info(f"Approval Response: {approval_response}")
+
+                # Check if approval succeeded
                 if approval_response.get("status") == "SUCCESS":
+                    # Update loan disbursement date
                     instance.disbursement_date = timezone.now()
                     instance.save(update_fields=["disbursement_date"])
-                    logger.info(f"Loan disbursed successfully for {instance.member.first_name}.")
+                    logger.info(f"Loan disbursed successfully for {instance.member.first_name}")
                 else:
                     logger.error(f"Approval failed: {approval_response}")
             else:
-                # Handle direct disbursement
+                # Update loan as directly disbursed
                 instance.disbursement_date = timezone.now()
                 instance.save(update_fields=["disbursement_date"])
-                logger.info(f"Loan disbursed without approval for {instance.member.first_name}.")
+                logger.info(f"Loan disbursed without approval for {instance.member.first_name}")
 
-        except FlexiCashMember.DoesNotExist:
-            logger.error(f"Member with email {instance.member.email} not found.")
         except Exception as e:
             logger.error(f"Error during loan disbursement: {e}", exc_info=True)
