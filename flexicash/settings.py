@@ -4,16 +4,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = True
 import dj_database_url
 from dotenv import load_dotenv
-load_dotenv()
-
-SECRET_KEY =  os.getenv('SECRET_KEY')
-ALLOWED_HOSTS = \
-    ['flexicash-23ff5ac55c24.herokuapp.com',\
-    'localhost','127.0.0.1',]
-
 if os.getenv('DJANGO_ENV') != 'production':
     load_dotenv()
-
+    
+SECRET_KEY =  os.getenv('SECRET_KEY')
+ALLOWED_HOSTS = ['flexicash-23ff5ac55c24.herokuapp.com','localhost','127.0.0.1',]
 
 INTASEND_PUBLISHABLE_KEY = os.getenv('INTASEND_PUBLISHABLE_KEY')
 INTASEND_SECRET_KEY = os.getenv('INTASEND_SECRET_KEY')
