@@ -7,11 +7,18 @@ from dotenv import load_dotenv
 load_dotenv()
 
 SECRET_KEY =  os.getenv('SECRET_KEY')
-ALLOWED_HOSTS = ['flexicash-7b2ddc94d56c.herokuapp.com','localhost','127.0.0.1',]
+ALLOWED_HOSTS = ['flexicashloans-c23dce6087ea.herokuapp.com','localhost','127.0.0.1',]
 
 if os.getenv('DJANGO_ENV') != 'production':
     load_dotenv()
 
+
+INTASEND_PUBLISHABLE_KEY = os.getenv('INTASEND_PUBLISHABLE_KEY')
+INTASEND_SECRET_KEY = os.getenv('INTASEND_SECRET_KEY')
+INTASEND_CHALLENGE_TOKEN = os.getenv('INTASEND_CHALLENGE_TOKEN')
+INTASEND_STK_WEBHOOK_URL = os.getenv('INTASEND_STK_WEBHOOK_URL')
+INTASEND_B2C_WEBHOOK_URL = os.getenv('INTASEND_B2C_WEBHOOK_URL')
+DATABASE_URL = os.getenv('DATABASE_URL')
 
 INSTALLED_APPS = [
     
@@ -32,7 +39,6 @@ INSTALLED_APPS = [
     
     'rest_framework',
     'phonenumber_field',
-    # 'django_celery_beat',
 
    
 ]
@@ -40,7 +46,7 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
 MIDDLEWARE = [
     
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Add this line
+    'whitenoise.middleware.WhiteNoiseMiddleware',  
     'django.middleware.security.SecurityMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -77,7 +83,6 @@ WSGI_APPLICATION = 'flexicash.wsgi.application'
 DATABASES = {
     'default': dj_database_url.config()
 }
-DATABASE_URL = os.getenv('DATABASE_URL')
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -112,7 +117,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
-
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend' 
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = 'ogingabrian2017@gmail.com'
@@ -120,15 +124,6 @@ EMAIL_HOST_PASSWORD =  'xtfzlyicegpxjnho'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = 'Flexipay Team <noreply@sendify.com>'
-
-
-# production settings
-INTASEND_PUBLISHABLE_KEY = os.getenv('INTASEND_PUBLISHABLE_KEY')
-INTASEND_SECRET_KEY = os.getenv('INTASEND_SECRET_KEY')
-INTASEND_CHALLENGE_TOKEN = os.getenv('INTASEND_CHALLENGE_TOKEN')
-INTASEND_WEBHOOK_URL = os.getenv('INTASEND_WEBHOOK_URL')
-
-
 
 CORS_REPLACE_HTTPS_REFERER      = False
 HOST_SCHEME                     = "https://"

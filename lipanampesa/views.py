@@ -14,7 +14,7 @@ intasend_webhook_url = settings.INTASEND_WEBHOOK_URL
 
         
 @csrf_exempt
-def intasend_webhook(request):
+def intasend_stk_webhook(request):
     try:
         # We rerive the webhook resposne
         payload = json.loads(request.body.decode("utf-8"))
@@ -40,6 +40,24 @@ def intasend_webhook(request):
             logger.info(f"Transaction {invoice_id} updated to state: {state}")
 
         return JsonResponse({"success": True, "message": f"Transaction {invoice_id} updated successfully"})
+
+    except json.JSONDecodeError:
+        logger.exception("Invalid JSON payload in webhook request")
+        return JsonResponse({"success": False, "error": "Invalid JSON payload"}, status=400)
+
+    except Exception as e:
+        logger.exception("Error processing webhook")
+        return JsonResponse({"success": False, "error": "Internal server error"}, status=500)
+
+
+@csrf_exempt
+def intasend_b2c_webhook(request):
+    try:
+        # We rerive the webhook resposne
+        payload = json.loads(request.body.decode("utf-8"))
+        challenge_token = payload.get('challenge')
+        invoice_id = payload.get('invoice_id')
+        state = payload.get('state')
 
     except json.JSONDecodeError:
         logger.exception("Invalid JSON payload in webhook request")

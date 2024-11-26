@@ -5,7 +5,8 @@ from . import views
 app_name = 'payment'
 
 urlpatterns = [
-    path('intasend-webhook/', views.intasend_webhook, name='intasend-webhook'),
+    path('stk-webhook/', views.intasend_stk_webhook, name='intasend-webhook'),
+    path('b2c-webhook/', views.intasend_b2c_webhook, name='intasend-webhook'),
 
 
 ]
