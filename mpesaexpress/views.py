@@ -151,20 +151,32 @@ def generate_password(shortcode, passkey, timestamp):
     password_string = f"{shortcode}{passkey}{timestamp}"
     return base64.b64encode(password_string.encode('utf-8')).decode('utf-8')
 
+import requests
+import base64
+
 def get_access_token():
     consumer_key = CONSUMER_KEY
     consumer_secret = CONSUMER_SECRET
+    url = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
 
-    auth_string = f"{consumer_key}:{consumer_secret}"
-    auth_base64 = base64.b64encode(auth_string.encode('utf-8')).decode('utf-8')
-
-    url = ACCESS_TOKEN_URL
     headers = {
-        "Authorization": f"Basic {auth_base64}"
+        "Authorization": f"Basic {base64.b64encode(f'{consumer_key}:{consumer_secret}'.encode()).decode()}"
     }
-    response = requests.get(url, headers=headers)
-    response_data = response.json()
-    return response_data.get('access_token')
+
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()  # Raise an error for HTTP codes >= 400
+        data = response.json()
+        if "access_token" in data:
+            return data["access_token"]
+        else:
+            raise ValueError("Access token not found in response")
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching access token: {e}")
+        raise
+    except ValueError as ve:
+        print(f"Unexpected response format: {ve}")
+        raise
 
 access_token = get_access_token()
 print("Access Token:", access_token)
