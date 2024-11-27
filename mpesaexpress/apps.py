@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class LipanampesaConfig(AppConfig):
+class MpesaexpressConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'lipanampesa'
+    name = 'mpesaexpress'

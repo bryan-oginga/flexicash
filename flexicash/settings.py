@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     'reports',
     'fleximembers',
     'loanapplication',
-    'lipanampesa',
+    'mpesaexpress',
     'transactions',
     'home',
     
@@ -61,8 +61,8 @@ INSTALLED_APPS = [
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
 MATERIAL_ADMIN = {
-    'PANEL_MODE': 'collapse',  # Choose between 'collapse' or 'stack'
-    'ADMIN_THEME': 'default',  # Options: 'default', 'dark', etc.
+    'PANEL_MODE': 'collapse',  
+    'ADMIN_THEME': 'default', 
 }
 
 
@@ -86,7 +86,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [os.path.join(BASE_DIR,'templates')],
-        'APP_DIRS': True,  # This should be True
+        'APP_DIRS': True,  
 
         'OPTIONS': {
             'context_processors': [
@@ -159,9 +159,8 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS  = False
 SECURE_FRAME_DENY               = False
 
 
-CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Redis as the message broker
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'  # Redis as the result backend
-
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'  # 
 broker_connection_retry_on_startup = True
 
 

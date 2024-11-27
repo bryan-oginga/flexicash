@@ -1,7 +1,7 @@
 from django.contrib import admin
-from .models import MpesaPayment
+from .models import MpesaTransaction
 
-class MpesaPaymentAdmin(admin.ModelAdmin):
+class MpesaTransactionAdmin(admin.ModelAdmin):
     list_display = ('merchant_request_id', 'checkout_request_id', 'phone_number', 'amount', 'status', 'transaction_date', 'created_at', 'updated_at')
     list_filter = ('status', 'result_code', 'transaction_date', 'created_at')
     search_fields = ('merchant_request_id', 'checkout_request_id', 'phone_number', 'mpesa_receipt_number',)
@@ -24,4 +24,4 @@ class MpesaPaymentAdmin(admin.ModelAdmin):
     # Optionally, you can customize the list view with inline editing (e.g., for batch updating)
     # inlines = []
 
-admin.site.register(MpesaPayment, MpesaPaymentAdmin)
+admin.site.register(MpesaTransaction, MpesaTransactionAdmin)

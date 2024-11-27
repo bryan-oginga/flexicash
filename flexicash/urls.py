@@ -8,7 +8,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('ussd.urls',namespace='ussd')),  
     path('dashboard/', include('reports.urls',namespace='reports')),  
-    path('payment/', include('lipanampesa.urls',namespace='payment')),  
+    path('payment/', include('mpesaexpress.urls',namespace='payment')),  
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

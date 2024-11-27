@@ -2,7 +2,7 @@ from django.http import JsonResponse,HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from transactions.models import Transaction
-from .models import MpesaPayment
+from .models import MpesaTransaction
 import logging
 import json
 from django.shortcuts import render

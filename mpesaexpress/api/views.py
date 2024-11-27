@@ -3,7 +3,7 @@ from datetime import datetime
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
-from lipanampesa.models import MpesaPayment
+from lipanampesa.models import MpesaTransaction
 import logging
 
 # Configure logging
@@ -56,7 +56,7 @@ class MpesaExpressCallback(APIView):
             )
 
             # Save transaction to database
-            mpesa_payment = MpesaPayment.objects.create(
+            mpesa_payment = MpesaTransaction.objects.create(
                 merchant_request_id=merchant_request_id,
                 checkout_request_id=checkout_request_id,
                 amount=amount,
