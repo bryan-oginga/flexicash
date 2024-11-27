@@ -83,7 +83,7 @@ def initiate_payhero_stk_push(request):
     callback_url = PAHERO_API_CALLBACK_URL
     
     # Save initial transaction details
-    transaction = MPesaTransaction.objects.create(
+    transaction = MpesaTransaction.objects.create(
         external_reference=external_reference,
         amount=amount,
         phone_number=phone_number,
@@ -135,7 +135,7 @@ def payhero_callback(request):
         
         # Extract details
         external_reference = response_data.get("ExternalReference")
-        transaction = get_object_or_404(MPesaTransaction, external_reference=external_reference)
+        transaction = get_object_or_404(MpesaTransaction, external_reference=external_reference)
         
         # Update transaction details
         transaction.status = response_data.get("Status")
@@ -151,9 +151,6 @@ def generate_password(shortcode, passkey, timestamp):
     password_string = f"{shortcode}{passkey}{timestamp}"
     return base64.b64encode(password_string.encode('utf-8')).decode('utf-8')
 
-
-
-
 def get_access_token():
     consumer_key = CONSUMER_KEY
     consumer_secret = CONSUMER_SECRET
@@ -165,7 +162,7 @@ def get_access_token():
     headers = {
         "Authorization": f"Basic {auth_base64}"
     }
-    response = requests.get(url, headers=headers,verify=False)
+    response = requests.get(url, headers=headers)
     response_data = response.json()
     return response_data.get('access_token')
 
