@@ -9,7 +9,7 @@ urlpatterns = [
     path('', include('ussd.urls',namespace='ussd')),  
     path('dashboard/', include('reports.urls',namespace='reports')),  
     path('payment/', include('mpesaexpress.urls',namespace='payment')),
-    path('api/', include('mpesaexpress.api.urls')),
+    path('api/v2/',include('mpesaexpress.api.urls')),
   
 ]
 if settings.DEBUG:
