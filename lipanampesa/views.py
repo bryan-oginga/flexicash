@@ -164,42 +164,73 @@ def get_access_token():
 access_token = get_access_token()
 print("Access Token:", access_token)
 
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
 def initiate_mpesa_stk_push(request):
-    shortcode = '174379' 
-    passkey = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'  
-    amount = 5  
-    phone_number = '254799043853' 
-    callback_url = 'https://flexicash-23ff5ac55c24.herokuapp.com/payment/mpesa_callback/' 
-    timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-    password = generate_password(shortcode, passkey, timestamp)
+    try:
+        # Mpesa credentials
+        shortcode = '174379'
+        passkey = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'
+        amount = 5
+        phone_number = '254799043853'
+        callback_url = 'https://flexicash-23ff5ac55c24.herokuapp.com/payment/mpesa_callback/'
+        timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+        password = generate_password(shortcode, passkey, timestamp)
 
-    payload = {
-        "BusinessShortCode": shortcode,
-        "Password": password,
-        "Timestamp": timestamp,
-        "TransactionType": "CustomerPayBillOnline",
-        "Amount": str(amount),
-        "PartyA": phone_number,  
-        "PartyB": shortcode,  
-        "PhoneNumber": phone_number,  
-        "CallBackURL": callback_url,
-        "AccountReference": "TestAccount", 
-        "TransactionDesc": "Payment for service"
-    }
-    access_token = get_access_token()
+        # Payload for the API
+        payload = {
+            "BusinessShortCode": shortcode,
+            "Password": password,
+            "Timestamp": timestamp,
+            "TransactionType": "CustomerPayBillOnline",
+            "Amount": str(amount),
+            "PartyA": phone_number,
+            "PartyB": shortcode,
+            "PhoneNumber": phone_number,
+            "CallBackURL": callback_url,
+            "AccountReference": "TestAccount",
+            "TransactionDesc": "Payment for service"
+        }
+        
+        # Generate access token
+        access_token = get_access_token()
+        
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json"
+        }
+        url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
 
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
-    }
-    url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
-    response = requests.post(url, json=payload, headers=headers)
-    
-    if response.status_code == 200:
-        response_data = response.json()
-        return JsonResponse(response_data) 
-    else:
-        return JsonResponse({"error": "Payment request failed", "details": response.json()})
+        # Log request details
+        logger.debug("Initiating MPesa STK Push")
+        logger.debug(f"URL: {url}")
+        logger.debug(f"Headers: {headers}")
+        logger.debug(f"Payload: {payload}")
+
+        # Make the API request
+        response = requests.post(url, json=payload, headers=headers, timeout=30)
+
+        # Log response details
+        logger.debug(f"Response Status Code: {response.status_code}")
+        logger.debug(f"Response Data: {response.text}")
+
+        if response.status_code == 200:
+            response_data = response.json()
+            logger.info("Payment request successful.")
+            return JsonResponse(response_data)
+        else:
+            logger.error("Payment request failed.")
+            return JsonResponse(
+                {"error": "Payment request failed", "details": response.json()},
+                status=response.status_code
+            )
+    except requests.exceptions.RequestException as e:
+        logger.exception("A network error occurred.")
+        return JsonResponse({"error": "A network error occurred", "details": str(e)}, status=500)
+    except Exception as e:
+        logger.exception("An unexpected error occurred.")
+        return JsonResponse({"error": "An unexpected error occurred", "details": str(e)}, status=500)
 
 
 
