@@ -15,7 +15,16 @@ INTASEND_SECRET_KEY = os.getenv('INTASEND_SECRET_KEY')
 INTASEND_CHALLENGE_TOKEN = os.getenv('INTASEND_CHALLENGE_TOKEN')
 INTASEND_STK_WEBHOOK_URL = os.getenv('INTASEND_STK_WEBHOOK_URL')
 INTASEND_B2C_WEBHOOK_URL = os.getenv('INTASEND_B2C_WEBHOOK_URL')
+
 DATABASE_URL = os.getenv('DATABASE_URL')
+
+PAHERO_API_USERNAME = os.getenv('PAHERO_API_USERNAME')
+PAHERO_API_PASSWORD = os.getenv('PAHERO_API_PASSWORD')
+PAHERO_API_ACCOUNT_ID = os.getenv('PAHERO_API_ACCOUNT_ID')
+PAHERO_API_CHANNEL_ID = os.getenv('PAHERO_API_CHANNEL_ID')
+PAHERO_API_CALLBACK_URL = os.getenv('PAHERO_API_CALLBACK_URL')
+
+
 
 INSTALLED_APPS = [
     
@@ -53,7 +62,8 @@ MATERIAL_ADMIN = {
 
 MIDDLEWARE = [
     
-    'whitenoise.middleware.WhiteNoiseMiddleware',  
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',  
     'django.middleware.security.SecurityMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
