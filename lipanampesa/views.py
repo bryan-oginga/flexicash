@@ -2,23 +2,26 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from transactions.models import Transaction
+from .models import MpesaPayment
 import logging
 import json
 from django.shortcuts import render
 import requests
 from django.shortcuts import get_object_or_404
-from .models import MPesaTransaction
 import uuid
-from django.conf import settings
+import base64
+import datetime
+logger = logging.getLogger(__name__)
+
 
 PAHERO_API_USERNAME = settings.PAHERO_API_USERNAME
 PAHERO_API_PASSWORD = settings.PAHERO_API_PASSWORD
 PAHERO_API_ACCOUNT_ID = settings.PAHERO_API_ACCOUNT_ID
 PAHERO_API_CHANNEL_ID = settings.PAHERO_API_CHANNEL_ID
 PAHERO_API_CALLBACK_URL = settings.PAHERO_API_CALLBACK_URL
+challenge_token = settings.INTASEND_CHALLENGE_TOKEN
 
 # Generate the Basic Auth token
-import base64
 
 def generate_basic_auth_token(api_username, api_password):
     credentials = f"{api_username}:{api_password}"
@@ -26,11 +29,6 @@ def generate_basic_auth_token(api_username, api_password):
     return f"Basic {encoded_credentials}"
 
 auth_token = generate_basic_auth_token(PAHERO_API_USERNAME, PAHERO_API_PASSWORD)
-challenge_token = settings.INTASEND_CHALLENGE_TOKEN
-
-logger = logging.getLogger(__name__)
-
-
         
 @csrf_exempt
 def intasend_stk_webhook(request):
@@ -142,3 +140,108 @@ def payhero_callback(request):
         return JsonResponse({"success": True, "message": "Callback received successfully."})
     return JsonResponse({"success": False, "error": "Invalid request method."}, status=400)
 
+
+
+def generate_password(shortcode, passkey, timestamp):
+    password_string = f"{shortcode}{passkey}{timestamp}"
+    return base64.b64encode(password_string.encode('utf-8')).decode('utf-8')
+
+def get_access_token():
+    consumer_key = "WumSttSJpeqk2HONJJtTg0w1oRaPVwQZF22HpRI8VAbVZx5K"
+    consumer_secret = "MEtFVM2mp9O2WKAT8GBI3IKA6Vn88AJ7nytMgTblsw9RJtT1WwGcllftp0uGjehH"
+
+    auth_string = f"{consumer_key}:{consumer_secret}"
+    auth_base64 = base64.b64encode(auth_string.encode('utf-8')).decode('utf-8')
+
+    url = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
+    headers = {
+        "Authorization": f"Basic {auth_base64}"
+    }
+    response = requests.get(url, headers=headers)
+    response_data = response.json()
+    return response_data.get('access_token')
+
+access_token = get_access_token()
+print("Access Token:", access_token)
+
+def initiate_mpesa_stk_push(request):
+    shortcode = '174379' 
+    passkey = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'  
+    amount = 5  
+    phone_number = '254799043853' 
+    callback_url = 'https://flexicash-23ff5ac55c24.herokuapp.com/payment/mpesa_callback/' 
+    timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+    password = generate_password(shortcode, passkey, timestamp)
+
+    payload = {
+        "BusinessShortCode": shortcode,
+        "Password": password,
+        "Timestamp": timestamp,
+        "TransactionType": "CustomerPayBillOnline",
+        "Amount": str(amount),
+        "PartyA": phone_number,  
+        "PartyB": shortcode,  
+        "PhoneNumber": phone_number,  
+        "CallBackURL": callback_url,
+        "AccountReference": "TestAccount", 
+        "TransactionDesc": "Payment for service"
+    }
+    access_token = get_access_token()
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+    url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
+    response = requests.post(url, json=payload, headers=headers)
+    
+    if response.status_code == 200:
+        response_data = response.json()
+        return JsonResponse(response_data) 
+    else:
+        return JsonResponse({"error": "Payment request failed", "details": response.json()})
+
+
+
+
+@csrf_exempt
+def mpesa_callback(request):
+    if request.method == "POST":
+        callback_data = request.body
+        data = json.loads(callback_data)
+
+        # Extracting values from the response
+        result_code = data.get("Body", {}).get("stkCallback", {}).get("ResultCode")
+        result_desc = data.get("Body", {}).get("stkCallback", {}).get("ResultDesc")
+        mpesa_receipt_number = data.get("Body", {}).get("stkCallback", {}).get("CallbackMetadata", {}).get("Item", [{}])[1].get("Value")
+        phone_number = data.get("Body", {}).get("stkCallback", {}).get("CallbackMetadata", {}).get("Item", [{}])[3].get("Value")
+        amount = data.get("Body", {}).get("stkCallback", {}).get("CallbackMetadata", {}).get("Item", [{}])[0].get("Value")
+
+        # Create the MpesaPayment record
+        try:
+            mpesa_payment = MpesaPayment(
+                merchant_request_id=data.get("Body", {}).get("stkCallback", {}).get("MerchantRequestID"),
+                checkout_request_id=data.get("Body", {}).get("stkCallback", {}).get("CheckoutRequestID"),
+                amount=amount,
+                phone_number=phone_number,
+                transaction_desc="Payment for service",  # Adjust if needed
+                result_code=result_code,
+                result_desc=result_desc,
+                mpesa_receipt_number=mpesa_receipt_number,
+                transaction_date=datetime.datetime.now(),  # Timestamp from callback can be used
+                callback_url=request.build_absolute_uri(),
+                status="Completed" if result_code == 0 else "Failed"
+            )
+            mpesa_payment.save()  # Save the payment record
+            print("Transaction saved:", mpesa_payment)  # Log for debugging
+
+        except Exception as e:
+            print("Error saving transaction:", e)  # Log any errors during save
+
+        # Return appropriate response based on result_code
+        if result_code == 0:
+            return JsonResponse({"message": "Payment successful", "receipt_number": mpesa_receipt_number})
+        else:
+            return JsonResponse({"message": "Payment failed", "error": result_desc})
+
+    return JsonResponse({"error": "Invalid request method"})

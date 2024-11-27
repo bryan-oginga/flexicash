@@ -1,31 +1,27 @@
 from django.contrib import admin
-from .models import MPesaTransaction
+from .models import MpesaPayment
 
-@admin.register(MPesaTransaction)
-class MPesaTransactionAdmin(admin.ModelAdmin):
-    list_display = (
-        'external_reference', 
-        'amount', 
-        'phone_number', 
-        'channel_id', 
-        'provider', 
-        'status', 
-        'mpesa_receipt_number', 
-        'created_at'
-    )
-    list_filter = ('status', 'provider', 'created_at', 'updated_at')
-    search_fields = ('external_reference', 'phone_number', 'mpesa_receipt_number', 'checkout_request_id')
-    readonly_fields = ('created_at', 'updated_at', 'checkout_request_id', 'mpesa_receipt_number', 'result_code', 'result_description')
-    ordering = ('-created_at',)  # Order by most recent transactions first
-    list_per_page = 20  # Paginate transactions for better performance
+class MpesaPaymentAdmin(admin.ModelAdmin):
+    list_display = ('merchant_request_id', 'checkout_request_id', 'phone_number', 'amount', 'status', 'transaction_date', 'created_at', 'updated_at')
+    list_filter = ('status', 'result_code', 'transaction_date', 'created_at')
+    search_fields = ('merchant_request_id', 'checkout_request_id', 'phone_number', 'mpesa_receipt_number', 'transaction_desc')
+    ordering = ('-created_at',)
+    date_hierarchy = 'transaction_date'
+    readonly_fields = ('merchant_request_id', 'checkout_request_id', 'transaction_desc', 'result_code', 'result_desc', 'mpesa_receipt_number', 'transaction_date', 'status', 'callback_url', 'created_at', 'updated_at')
+    
     fieldsets = (
         (None, {
-            'fields': ('external_reference', 'amount', 'phone_number', 'channel_id', 'provider', 'status')
+            'fields': ('merchant_request_id', 'checkout_request_id', 'transaction_desc', 'result_code', 'result_desc', 'mpesa_receipt_number')
         }),
-        ('Transaction Details', {
-            'fields': ('checkout_request_id', 'mpesa_receipt_number', 'result_code', 'result_description')
+        ('Payment Details', {
+            'fields': ('amount', 'phone_number', 'status', 'callback_url', 'transaction_date')
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at')
         }),
     )
+
+    # Optionally, you can customize the list view with inline editing (e.g., for batch updating)
+    # inlines = []
+
+admin.site.register(MpesaPayment, MpesaPaymentAdmin)
