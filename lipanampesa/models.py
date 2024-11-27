@@ -28,7 +28,6 @@ class MpesaPayment(models.Model):
     checkout_request_id = models.CharField(max_length=255)  
     amount = models.DecimalField(max_digits=10, decimal_places=2) 
     phone_number = models.CharField(max_length=15)  
-    transaction_desc = models.CharField(max_length=13)  
     result_code = models.IntegerField()   
     result_desc = models.CharField(max_length=255)  
     mpesa_receipt_number = models.CharField(max_length=255, null=True, blank=True)  
