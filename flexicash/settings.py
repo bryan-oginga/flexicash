@@ -34,8 +34,6 @@ MPESA_CALLBACK_URL = os.getenv('MPESA_CALLBACK_URL')
 
 INSTALLED_APPS = [
     
-   "admin_interface",
-    "colorfield",    'material',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -60,10 +58,6 @@ INSTALLED_APPS = [
 ]
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
-MATERIAL_ADMIN = {
-    'PANEL_MODE': 'collapse',  
-    'ADMIN_THEME': 'default', 
-}
 
 
 MIDDLEWARE = [
