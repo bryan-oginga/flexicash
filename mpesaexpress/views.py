@@ -74,85 +74,12 @@ def intasend_stk_webhook(request):
         return JsonResponse({"success": False, "error": "Internal server error"}, status=500)
 
 
-def initiate_payhero_stk_push(request):
-    # Example input data
-    amount = 3
-    phone_number = "0799043853"
-    channel_id = PAHERO_API_CHANNEL_ID
-    external_reference = f"INV-{uuid.uuid4().hex[:6].upper()}"
-    callback_url = PAHERO_API_CALLBACK_URL
-    
-    # Save initial transaction details
-    transaction = MpesaTransaction.objects.create(
-        external_reference=external_reference,
-        amount=amount,
-        phone_number=phone_number,
-        channel_id=channel_id,
-        provider="m-pesa",
-    )
 
-    # Generate auth token
-    auth_token = generate_basic_auth_token(PAHERO_API_USERNAME, PAHERO_API_PASSWORD)
-
-    # API Headers and Payload
-    api_url = "https://backend.payhero.co.ke/api/v2/payments"
-    headers = {
-        "Authorization": auth_token,
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "amount": amount,
-        "phone_number": phone_number,
-        "channel_id": channel_id,
-        "provider": "m-pesa",
-        "external_reference": external_reference,
-        "callback_url": callback_url
-    }
-
-    # Debugging information
-    logger.info(f"Auth Token: {auth_token}")
-    logger.info(f"Headers: {headers}")
-    logger.info(f"Payload: {payload}")
-
-    # Make the API call
-    response = requests.post(api_url, json=payload, headers=headers)
-    if response.status_code == 201:
-        response_data = response.json()
-        transaction.status = response_data.get("status")
-        transaction.checkout_request_id = response_data.get("CheckoutRequestID")
-        transaction.save()
-        return JsonResponse({"success": True, "transaction": response_data}, status=201)
-    else:
-        logger.error(f"API Error: {response.text}")
-        return JsonResponse({"success": False, "error": response.json()}, status=response.status_code)
-
-
-@csrf_exempt
-def payhero_callback(request):
-    if request.method == "POST":
-        data = json.loads(request.body)
-        response_data = data.get("response", {})
-        
-        # Extract details
-        external_reference = response_data.get("ExternalReference")
-        transaction = get_object_or_404(MpesaTransaction, external_reference=external_reference)
-        
-        # Update transaction details
-        transaction.status = response_data.get("Status")
-        transaction.result_code = response_data.get("ResultCode")
-        transaction.result_description = response_data.get("ResultDesc")
-        transaction.mpesa_receipt_number = response_data.get("MpesaReceiptNumber")
-        transaction.save()
-
-        return JsonResponse({"success": True, "message": "Callback received successfully."})
-    return JsonResponse({"success": False, "error": "Invalid request method."}, status=400)
 
 def generate_password(shortcode, passkey, timestamp):
     password_string = f"{shortcode}{passkey}{timestamp}"
     return base64.b64encode(password_string.encode('utf-8')).decode('utf-8')
 
-import requests
-import base64
 
 def get_access_token():
     consumer_key = CONSUMER_KEY
@@ -178,11 +105,7 @@ def get_access_token():
         print(f"Unexpected response format: {ve}")
         raise
 
-access_token = get_access_token()
-print("Access Token:", access_token)
 
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
 
 def initiate_mpesa_stk_push(request):
     try:
@@ -210,7 +133,6 @@ def initiate_mpesa_stk_push(request):
             "TransactionDesc": "Payment for service"
         }
         
-        # Generate access token
         access_token = get_access_token()
         
         headers = {
@@ -219,7 +141,6 @@ def initiate_mpesa_stk_push(request):
         }
         url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
 
-        # Log request details
         logger.debug("Initiating MPesa STK Push")
         logger.debug(f"URL: {url}")
         logger.debug(f"Headers: {headers}")
