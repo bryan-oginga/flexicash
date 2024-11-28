@@ -13,7 +13,6 @@ transaction_date = now()
 
 # Configure logging
 logger = logging.getLogger(__name__)
-@api_view(['POST'])
 class MpesaExpressCallback(APIView):
     def post(self, request, *args, **kwargs):
         try:
