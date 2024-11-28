@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import MpesaTransaction
 
 class MpesaTransactionAdmin(admin.ModelAdmin):
-    list_display = ('merchant_request_id', 'checkout_request_id', 'phone_number', 'amount', 'status', 'transaction_date', 'created_at', 'updated_at')
+    list_display = ('transaction_date','phone_number', 'amount','mpesa_receipt_number','status',   'updated_at')
     list_filter = ('status', 'result_code', 'transaction_date', 'created_at')
     search_fields = ('merchant_request_id', 'checkout_request_id', 'phone_number', 'mpesa_receipt_number',)
     ordering = ('-created_at',)

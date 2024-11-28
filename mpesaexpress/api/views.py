@@ -13,8 +13,23 @@ transaction_date = now()
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
+
 class MpesaExpressCallback(APIView):
+    def get(self, request, *args, **kwargs):
+        """
+        Handle GET requests to this endpoint.
+        """
+        logger.warning("Received a GET request on the M-Pesa callback endpoint.")
+        return Response(
+            {"error": "This endpoint only supports POST requests."},
+            status=HTTP_400_BAD_REQUEST
+        )
+
     def post(self, request, *args, **kwargs):
+        """
+        Handle POST requests to process M-Pesa callbacks.
+        """
         try:
             logger.debug("Received M-Pesa Callback: %s", request.data)
             
