@@ -1,62 +1,65 @@
-from pytz import utc
+import pytz
 from datetime import datetime
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from mpesaexpress.models import MpesaTransaction
 import logging
+from django.utils.timezone import now
+
+transaction_date = now()
+
 
 # Configure logging
 logger = logging.getLogger(__name__)
-
 
 class MpesaExpressCallback(APIView):
     def post(self, request, *args, **kwargs):
         try:
             logger.debug("Received M-Pesa Callback: %s", request.data)
-
+            
             # Extract data from callback
             stk_callback = request.data.get("Body", {}).get("stkCallback", {})
             merchant_request_id = stk_callback.get("MerchantRequestID")
             checkout_request_id = stk_callback.get("CheckoutRequestID")
-            result_code = stk_callback.get("ResultCode", -1)
-            result_desc = stk_callback.get("ResultDesc", "No description provided")
+            result_code = stk_callback.get("ResultCode")
+            result_desc = stk_callback.get("ResultDesc")
+
+            # Extract metadata items
             items = stk_callback.get("CallbackMetadata", {}).get("Item", [])
+            amount = None
+            phone_number = None
+            mpesa_receipt_number = None
+            transaction_date = None
 
-            # Extract and initialize transaction data
-            amount = next((item["Value"] for item in items if item.get("Name") == "Amount"), None)
-            phone_number = next((item["Value"] for item in items if item.get("Name") == "PhoneNumber"), None)
-            mpesa_receipt_number = next((item["Value"] for item in items if item.get("Name") == "MpesaReceiptNumber"), None)
-            transaction_date = next((item["Value"] for item in items if item.get("Name") == "TransactionDate"), None)
+            for item in items:
+                if item.get("Name") == "Amount":
+                    amount = item.get("Value")
+                elif item.get("Name") == "MpesaReceiptNumber":
+                    mpesa_receipt_number = item.get("Value")
+                elif item.get("Name") == "PhoneNumber":
+                    phone_number = item.get("Value")
+                elif item.get("Name") == "TransactionDate":
+                    transaction_date = item.get("Value")
 
-            # Convert transaction date
-            try:
-                if transaction_date:
-                    transaction_datetime = utc.localize(
-                        datetime.strptime(str(transaction_date), "%Y%m%d%H%M%S")
-                    )
-                else:
-                    transaction_datetime = None
-            except ValueError as ve:
-                logger.error("Transaction date parsing error: %s", ve)
+            # Convert transaction date to timezone-aware datetime
+            if transaction_date:
+                transaction_datetime = datetime.strptime(
+                    str(transaction_date), "%Y%m%d%H%M%S"
+                )
+                transaction_datetime = pytz.utc.localize(transaction_datetime)
+            else:
                 transaction_datetime = None
 
-            # Log parsed data
             logger.info(
-                "Parsed Callback Data: MerchantRequestID=%s, CheckoutRequestID=%s, Amount=%s, PhoneNumber=%s, "
-                "ReceiptNumber=%s, TransactionDate=%s, ResultCode=%s, ResultDesc=%s",
-                merchant_request_id,
-                checkout_request_id,
+                "Parsed Callback Data: Amount=%s, PhoneNumber=%s, ReceiptNumber=%s, TransactionDate=%s",
                 amount,
                 phone_number,
                 mpesa_receipt_number,
                 transaction_datetime,
-                result_code,
-                result_desc,
             )
 
-            # Save transaction
-            status = "Success" if result_code == 0 else "Failed"
+            # Save transaction to database
             mpesa_payment = MpesaTransaction.objects.create(
                 merchant_request_id=merchant_request_id,
                 checkout_request_id=checkout_request_id,
@@ -66,7 +69,7 @@ class MpesaExpressCallback(APIView):
                 result_desc=result_desc,
                 mpesa_receipt_number=mpesa_receipt_number,
                 transaction_date=transaction_datetime,
-                status=status,
+                status="Success" if result_code == 0 else "Failed",
                 callback_url=request.build_absolute_uri(),
             )
             logger.info("M-Pesa Payment Saved: %s", mpesa_payment)
@@ -74,9 +77,15 @@ class MpesaExpressCallback(APIView):
             return Response({"status": "success", "message": "Payment recorded successfully!"}, status=HTTP_200_OK)
 
         except KeyError as e:
-            logger.error("KeyError in M-Pesa callback: %s", e)
-            return Response({"error": "Missing required fields", "details": str(e)}, status=HTTP_400_BAD_REQUEST)
+            logger.error("KeyError while processing M-Pesa callback: %s", e)
+            return Response(
+                {"error": "Invalid callback data", "details": str(e)},
+                status=HTTP_400_BAD_REQUEST,
+            )
 
         except Exception as e:
-            logger.exception("An unexpected error occurred while processing M-Pesa callback")
-            return Response({"error": "Unexpected error", "details": str(e)}, status=HTTP_400_BAD_REQUEST)
+            logger.exception("An error occurred while processing M-Pesa callback")
+            return Response(
+                {"error": "An unexpected error occurred", "details": str(e)},
+                status=HTTP_400_BAD_REQUEST,
+            )
