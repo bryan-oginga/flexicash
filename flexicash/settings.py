@@ -27,8 +27,9 @@ PAHERO_API_CALLBACK_URL = os.getenv('PAHERO_API_CALLBACK_URL')
 PASSKEY = os.getenv('PASSKEY')
 CONSUMER_KEY = os.getenv('CONSUMER_KEY')
 CONSUMER_SECRET = os.getenv('CONSUMER_SECRET')
-ACCESS_TOKEN_URL = os.getenv('ACCESS_TOKEN_URL')
-MPESA_CALLBACK_URL = os.getenv('MPESA_CALLBACK_URL')
+ACCESS_TOKEN_URL = 'https://sandbox.safaricom.co.ke/oauth/v1/generategrant_type=client_credentials'
+
+MPESA_CALLBACK_URL = 'https://flexicash-23ff5ac55c24.herokuapp.com/api/v2/mpesa_callback'
 
 
 
