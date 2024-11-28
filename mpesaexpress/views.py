@@ -189,7 +189,7 @@ def initiate_mpesa_stk_push(request):
         # Mpesa credentials
         shortcode = '174379'
         passkey = PASSKEY
-        amount = 5
+        amount = 2
         phone_number = '254799043853'
         callback_url = MPESA_CALLBACK_URL
         timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')

@@ -6,13 +6,14 @@ from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from mpesaexpress.models import MpesaTransaction
 import logging
 from django.utils.timezone import now
+from rest_framework.decorators import api_view
 
 transaction_date = now()
 
 
 # Configure logging
 logger = logging.getLogger(__name__)
-
+@api_view(['POST'])
 class MpesaExpressCallback(APIView):
     def post(self, request, *args, **kwargs):
         try:

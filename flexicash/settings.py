@@ -29,7 +29,7 @@ CONSUMER_KEY = os.getenv('CONSUMER_KEY')
 CONSUMER_SECRET = os.getenv('CONSUMER_SECRET')
 ACCESS_TOKEN_URL = 'https://sandbox.safaricom.co.ke/oauth/v1/generategrant_type=client_credentials'
 
-MPESA_CALLBACK_URL = 'https://flexicash-23ff5ac55c24.herokuapp.com/api/v2/mpesa_callback'
+MPESA_CALLBACK_URL = 'https://flexicash-23ff5ac55c24.herokuapp.com/api/v2/mpesa_callback/'
 
 
 
