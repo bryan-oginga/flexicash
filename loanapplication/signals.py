@@ -60,6 +60,7 @@ def update_member_loan_status(sender, instance, **kwargs):
         ('Pending', 'Pending'),
         ('Approved', 'Approved'),
         ('Closed', 'Closed'),
+        ('Active', 'Active'),
     }
 
     # Check if the status needs updating
@@ -84,64 +85,3 @@ def update_member_balance(sender, instance, created, **kwargs):
             print("The mmeber does not exist")
         
         
-import logging
-from intasend import APIService
-from django.utils import timezone
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from .models import MemberLoanApplication
-
-
-@receiver(post_save, sender=MemberLoanApplication)
-def disburse_loan_on_approval(sender, instance, created, **kwargs):
-    """
-    Initiates and approves M-Pesa B2C transactions for loan disbursement
-    when a loan is approved in the admin panel.
-    """
-    if instance.loan_status == 'Approved' and instance.disbursement_date is None:
-        try:
-            # Set up the member and phone number
-            member = instance.member
-            member_phone = member.phone.lstrip('+')  # Ensure phone number is formatted correctly
-            logger.info(f"Member phone number: {member_phone}")
-
-            # Prepare transaction details
-            transaction = {
-                "name": member.first_name,  # Name of the member
-                "account": f"254{member_phone[1:]}",  # Phone number in proper format (2547...)
-                "amount": float(instance.principal_amount),  # Loan amount
-                "narrative": f"Loan disbursement for {member.membership_number}",  # Purpose of the payment
-            }
-
-        
-
-            # Initiate transfer
-            response = service.transfer.mpesa(
-                currency="KES",
-                transactions=[transaction],
-                requires_approval="YES",  # Ensure approval is required
-            )
-
-            # Log the response
-            logger.info(f"IntaSend Initiate Response: {response}")
-
-            # Handle approval if needed
-            if response.get("requires_approval") == "YES":
-                approval_response = service.transfer.approve(response)
-                logger.info(f"IntaSend Approval Response: {approval_response}")
-
-                # Confirm success and update disbursement date
-                if approval_response.get("status") == "SUCCESS":
-                    instance.disbursement_date = timezone.now()
-                    instance.save(update_fields=["disbursement_date"])
-                    logger.info(f"Loan disbursed successfully for {member.first_name} ({member.membership_number})")
-                else:
-                    logger.error(f"Approval failed for {member.first_name} ({member.membership_number}): {approval_response}")
-            else:
-                # Direct disbursement without approval (if applicable)
-                instance.disbursement_date = timezone.now()
-                instance.save(update_fields=["disbursement_date"])
-                logger.info(f"Loan disbursed without approval for {member.first_name} ({member.membership_number})")
-
-        except Exception as e:
-            logger.error(f"Error during loan disbursement for {instance.member.first_name}: {str(e)}", exc_info=True)
