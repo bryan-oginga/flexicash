@@ -5,26 +5,26 @@ from django.utils import timezone
 def get_transactions(member, period):
     """Retrieve transactions based on the given period in months."""
     start_date = timezone.now() - timedelta(days=period * 30)
-    # Return actual model instances from the database
+    # Ensure we're querying for actual model instances
     transactions = Transaction.objects.filter(
         member=member,
         state='COMPLETE',
         date__gte=start_date
     ).order_by('date')
 
-    # Log to verify the type of each transaction
+    # Log each transaction to ensure they're model instances
     for transaction in transactions:
         print(f"Transaction: {transaction} | Type: {type(transaction)}")
 
-    return transactions
+    return transactions  # Return the queryset of actual model instances
+
 
 def generate_statement_rows(transactions):
+    """Generate statement rows from the provided transaction model instances."""
     statement_rows = []
     for transaction in transactions:
-        # Ensure that transaction is a model instance and has the attribute `transaction_type`
-        if isinstance(transaction, dict):  # Log if it's a dictionary
-            print(f"Unexpected dictionary found: {transaction}")
-        if hasattr(transaction, 'transaction_type'):
+        # Ensure that each transaction is an instance of Transaction
+        if isinstance(transaction, Transaction):
             if transaction.transaction_type == 'Disbursement':
                 statement_rows.append({
                     'date': transaction.date,
@@ -38,6 +38,7 @@ def generate_statement_rows(transactions):
                     'description': 'Repayment',
                 })
         else:
-            print(f"Transaction does not have 'transaction_type': {transaction}")
+            print(f"Unexpected type encountered: {type(transaction)}")
 
     return statement_rows
+
