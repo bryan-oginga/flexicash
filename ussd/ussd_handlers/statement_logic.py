@@ -3,13 +3,9 @@ from datetime import timedelta
 from django.utils import timezone
 
 def get_transactions(member, period):
-    """
-    Retrieve transactions for the given period (in months).
-    """
-    # Calculate the start date for the requested period
+    """Retrieve transactions based on the given period in months."""
     start_date = timezone.now() - timedelta(days=period * 30)
-    
-    # Fetch transactions for the given member and period
+    # Ensure this query returns Transaction model instances
     return Transaction.objects.filter(
         member=member,
         state='COMPLETE',
@@ -17,16 +13,19 @@ def get_transactions(member, period):
     ).order_by('date')
 
 def generate_statement_rows(transactions):
-    """
-    Generate the statement rows directly from transaction data.
-    """
     statement_rows = []
     for transaction in transactions:
-        # Generate a simple row for each transaction type (Disbursement or Repayment)
-        description = 'Disbursement' if transaction.transaction_type == 'Disbursement' else 'Repayment'
-        statement_rows.append({
-            'date': transaction.date.strftime('%Y-%m-%d'),  # format date
-            'amount': transaction.amount,
-            'description': description
-        })
+        # Ensure that transaction is a model instance and has the attribute `transaction_type`
+        if transaction.transaction_type == 'Disbursement':
+            statement_rows.append({
+                'date': transaction.date,
+                'amount': transaction.amount,
+                'description': 'Disbursement',
+            })
+        elif transaction.transaction_type == 'Repayment':
+            statement_rows.append({
+                'date': transaction.date,
+                'amount': transaction.amount,
+                'description': 'Repayment',
+            })
     return statement_rows
