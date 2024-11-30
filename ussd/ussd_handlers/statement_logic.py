@@ -1,44 +1,36 @@
 from transactions.models import Transaction
 from datetime import timedelta
 from django.utils import timezone
-
-def get_transactions(member, period):
-    """Retrieve transactions based on the given period in months."""
-    start_date = timezone.now() - timedelta(days=period * 30)
-    # Ensure we're querying for actual model instances
-    transactions = Transaction.objects.filter(
-        member=member,
-        state='COMPLETE',
-        date__gte=start_date
-    ).order_by('date')
-
-    # Log each transaction to ensure they're model instances
-    for transaction in transactions:
-        print(f"Transaction: {transaction} | Type: {type(transaction)}")
-
-    return transactions  # Return the queryset of actual model instances
-
-
+from datetime import timedelta
+from datetime import datetime
 def generate_statement_rows(transactions):
-    """Generate statement rows from the provided transaction model instances."""
+    """
+    Generate rows for the statement with date, description, amount paid, and balance.
+    """
     statement_rows = []
-    for transaction in transactions:
-        # Ensure that each transaction is an instance of Transaction
-        if isinstance(transaction, Transaction):
-            if transaction.transaction_type == 'Disbursement':
-                statement_rows.append({
-                    'date': transaction.date,
-                    'amount': transaction.amount,
-                    'description': 'Disbursement',
-                })
-            elif transaction.transaction_type == 'Repayment':
-                statement_rows.append({
-                    'date': transaction.date,
-                    'amount': transaction.amount,
-                    'description': 'Repayment',
-                })
-        else:
-            print(f"Unexpected type encountered: {type(transaction)}")
+    balance = 0
 
+    for transaction in transactions:
+        if transaction.transaction_type == 'Disbursement':
+            balance += transaction.amount
+            description = 'Loan Disbursement'
+        elif transaction.transaction_type == 'Repayment':
+            balance -= transaction.amount
+            description = 'Loan Repayment'
+        
+        statement_rows.append({
+            'date': transaction.date.strftime('%Y-%m-%d'),
+            'description': description,
+            'amount_paid': transaction.amount,
+            'balance': balance,
+        })
+    
     return statement_rows
 
+def get_transactions(member, period):
+    """
+    Get transactions for a member for the given period (in months).
+    """
+    period_start_date = datetime.now() - timedelta(days=period * 30)
+    transactions = Transaction.objects.filter(member=member, date__gte=period_start_date)
+    return transactions

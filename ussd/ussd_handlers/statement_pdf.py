@@ -1,9 +1,10 @@
+
 from weasyprint import HTML, CSS
 from django.template.loader import render_to_string
 from django.conf import settings
 import os
 import PyPDF2
-from .statement_logic import generate_statement_rows  # Import here
+from .statement_logic import generate_statement_rows
 
 def create_statement_pdf(member, transactions, period, request):
     """
@@ -18,9 +19,9 @@ def create_statement_pdf(member, transactions, period, request):
         'transactions': statement_rows,
         'period': period,
         'date': transactions[0].date.strftime('%Y-%m-%d') if transactions else "",
-        'total_paid': sum(row['amount'] for row in statement_rows if row['description'] == 'Repayment'),
-        'current_balance': sum(row['amount'] for row in statement_rows if row['description'] == 'Disbursement') - 
-                           sum(row['amount'] for row in statement_rows if row['description'] == 'Repayment'),
+        'total_paid': sum(row['amount_paid'] for row in statement_rows if row['description'] == 'Loan Repayment'),
+        'current_balance': sum(row['amount_paid'] for row in statement_rows if row['description'] == 'Loan Disbursement') - 
+                           sum(row['amount_paid'] for row in statement_rows if row['description'] == 'Loan Repayment'),
     })
 
     # Set CSS for the PDF

@@ -1,8 +1,8 @@
-from .statement_logic import get_transactions, generate_statement_rows
+from django.http import HttpResponse
+from .statement_logic import get_transactions
 from .statement_pdf import create_statement_pdf
 from .send_email import send_statement_email
 from fleximembers.models import FlexiCashMember
-from django.http import HttpResponse
 
 def mini_statement_handler(request, session_id, phone_number, text):
     text_parts = text.split("*")
@@ -19,12 +19,15 @@ def mini_statement_handler(request, session_id, phone_number, text):
     period = period_options.get(text_parts[1])
 
     if period:
-        # Get actual transaction model instances
+        # Get the transactions for the given period
         transactions = get_transactions(member, period)
-        print(f"Transactions passed to generate_statement_rows: {transactions}")
-        statement_rows = generate_statement_rows(transactions)  # Pass model instances here
-        pdf_path, password = create_statement_pdf(member, statement_rows, period, request)
+
+        # Generate the PDF and get the password
+        pdf_path, password = create_statement_pdf(member, transactions, period, request)
+
+        # Send the email with the statement
         send_statement_email(member, pdf_path, password, period)
-        return HttpResponse("END Your loan-statement has been sent to your email.")
+
+        return HttpResponse("END Your loan statement has been sent to your email.")
     else:
         return HttpResponse("END Invalid option.")
