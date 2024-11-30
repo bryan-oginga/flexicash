@@ -14,19 +14,20 @@ def get_transactions(member, period):
 def generate_statement_rows(transactions):
     statement_rows = []
     for transaction in transactions:
-        # Use dictionary key access instead of attribute access
-        if transaction.get('transaction_type') == 'Disbursement':
+        # Access attributes directly
+        if transaction.transaction_type == 'Disbursement':
             # Process disbursement
             statement_rows.append({
-                'date': transaction.get('date'),
-                'amount': transaction.get('amount'),
-                'description': transaction.get('description', 'Disbursement'),
+                'date': transaction.date,
+                'amount': transaction.amount,
+                'description': 'Disbursement',
             })
-        elif transaction.get('transaction_type') == 'Repayment':
+        elif transaction.transaction_type == 'Repayment':
             # Process repayment
             statement_rows.append({
-                'date': transaction.get('date'),
-                'amount': transaction.get('amount'),
-                'description': transaction.get('description', 'Repayment'),
+                'date': transaction.date,
+                'amount': transaction.amount,
+                'description': 'Repayment',
             })
     return statement_rows
+
