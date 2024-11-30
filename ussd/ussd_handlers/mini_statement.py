@@ -20,11 +20,11 @@ def mini_statement_handler(request, session_id, phone_number, text):
 
     if period:
         # Get actual transaction model instances
-        transactions = get_transactions(member, period)  
+        transactions = get_transactions(member, period)
+        print(f"Transactions passed to generate_statement_rows: {transactions}")
         statement_rows = generate_statement_rows(transactions)  # Pass model instances here
         pdf_path, password = create_statement_pdf(member, statement_rows, period, request)
         send_statement_email(member, pdf_path, password, period)
         return HttpResponse("END Your loan-statement has been sent to your email.")
     else:
         return HttpResponse("END Invalid option.")
-
