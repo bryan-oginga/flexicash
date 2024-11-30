@@ -12,21 +12,21 @@ def get_transactions(member, period):
     ).order_by('date')
 
 def generate_statement_rows(transactions):
-    """Generate rows for the statement with dynamic balance calculation."""
-    balance = 0
     statement_rows = []
-
     for transaction in transactions:
-        if transaction.transaction_type == 'Disbursement':
-            balance += transaction.amount
-        elif transaction.transaction_type == 'Repayment':
-            balance -= transaction.amount
-
-        statement_rows.append({
-            'date': transaction.date,
-            'description': transaction.repayment_type if transaction.transaction_type == 'Repayment' else 'Disbursement',
-            'amount': transaction.amount,
-            'balance': balance
-        })
-
+        # Use dictionary key access instead of attribute access
+        if transaction.get('transaction_type') == 'Disbursement':
+            # Process disbursement
+            statement_rows.append({
+                'date': transaction.get('date'),
+                'amount': transaction.get('amount'),
+                'description': transaction.get('description', 'Disbursement'),
+            })
+        elif transaction.get('transaction_type') == 'Repayment':
+            # Process repayment
+            statement_rows.append({
+                'date': transaction.get('date'),
+                'amount': transaction.get('amount'),
+                'description': transaction.get('description', 'Repayment'),
+            })
     return statement_rows
