@@ -24,4 +24,4 @@ class MpesaTransactionAdmin(admin.ModelAdmin):
     # Optionally, you can customize the list view with inline editing (e.g., for batch updating)
     # inlines = []
 
-admin.site.register(MpesaTransaction, MpesaTransactionAdmin)
+# admin.site.register(MpesaTransaction, MpesaTransactionAdmin)

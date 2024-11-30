@@ -45,7 +45,6 @@ class MemberLoanApplication(models.Model):
         ('Pending', 'Pending'),
         ('Approved', 'Approved'),
         ('Closed', 'Closed'),
-        ('Active', 'Active'),
     ]
 
     application_ref = models.CharField(max_length=15, unique=True, null=True, blank=True)

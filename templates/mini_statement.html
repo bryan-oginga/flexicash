@@ -130,13 +130,13 @@
                         {{ transaction.date|date:"d/m/Y" }}
                       </td>
                       <td class="cs-width_5">
-                        {{ transaction.transaction_type }}
+                        {{ transaction.description }}
                       </td>
                       <td class="cs-width_4 cs-text_right cs-primary_color">
                         {{ transaction.amount }}
                       </td>
                       <td class="cs-width_4 cs-text_right cs-primary_color">
-                        {{current_balance}}
+                       {{ transaction.balance }}
                       </td>
                     </tr>
                     {% endfor %}
