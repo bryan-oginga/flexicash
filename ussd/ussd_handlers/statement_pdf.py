@@ -3,6 +3,7 @@ from django.template.loader import render_to_string
 from django.conf import settings
 import os
 import PyPDF2
+from .statement_logic import generate_statement_rows  # Import here
 
 def create_statement_pdf(member, transactions, period, request):
     """
