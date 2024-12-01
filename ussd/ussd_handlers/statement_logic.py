@@ -9,7 +9,11 @@ from django.conf import settings
 def get_transactions(member, period):
     """Retrieve transactions based on the given period in months."""
     start_date = timezone.now() - timedelta(days=period * 30)
-    return Transaction.objects.filter(member=member,state='COMPLETE',date__gte=start_date)
+    try:
+        return Transaction.objects.filter(member=member,state='COMPLETE',date__gte=start_date)
+    except Exception as e:
+        print(f"Error retrieving transactions: {e}")
+        return []
 
 def calculate_balance(transactions):
     """Calculate the loan balance based on disbursements and repayments."""
@@ -23,7 +27,7 @@ def calculate_balance(transactions):
 
 def generate_qr_code(member, period):
     # Retrieve the most recent active loan for the member, if any
-    active_loan = member.loans.filter(loan_status__in=["Approved"]).first()
+    active_loan = member.loans.filter(loan_status__in=["Approved","Pendning","Active"]).first()
     
     # If there’s no active loan, handle accordingly
     if not active_loan:
