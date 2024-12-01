@@ -1,3 +1,4 @@
+
 from django.http import HttpResponse
 from .statement_logic import get_transactions
 from .statement_pdf import create_statement_pdf
@@ -19,15 +20,9 @@ def mini_statement_handler(request, session_id, phone_number, text):
     period = period_options.get(text_parts[1])
 
     if period:
-        # Get the transactions for the given period
         transactions = get_transactions(member, period)
-
-        # Generate the PDF and get the password
         pdf_path, password = create_statement_pdf(member, transactions, period, request)
-
-        # Send the email with the statement
         send_statement_email(member, pdf_path, password, period)
-
-        return HttpResponse("END Your loan statement has been sent to your email.")
+        return HttpResponse("END Your loan-statement has been sent to your email.")
     else:
         return HttpResponse("END Invalid option.")

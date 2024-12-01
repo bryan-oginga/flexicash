@@ -1,5 +1,3 @@
-# your_app/send_email.py
-
 from django.core.mail import EmailMessage
 from django.conf import settings
 
