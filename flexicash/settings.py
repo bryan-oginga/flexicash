@@ -1,36 +1,25 @@
 import os
 from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
-DEBUG = True
-import dj_database_url
 from dotenv import load_dotenv
-if os.getenv('DJANGO_ENV') != 'production':
-    load_dotenv()
+import dj_database_url
+
+ENV = os.getenv('DJANGO_ENV','development')
+
+if ENV == 'production':
+    load_dotenv('.ENV.production')
+else:
+    load_dotenv('.ENV.development')
     
-SECRET_KEY =  os.getenv('SECRET_KEY')
-ALLOWED_HOSTS = ['flexicash-23ff5ac55c24.herokuapp.com','localhost','127.0.0.1',]
+SECRET_KEY =  os.getenv('DJANGO_SECRET_KEY')
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS] 
+DEBUG = os.getenv('DEBUG')
 
 INTASEND_PUBLISHABLE_KEY = os.getenv('INTASEND_PUBLISHABLE_KEY')
 INTASEND_SECRET_KEY = os.getenv('INTASEND_SECRET_KEY')
 INTASEND_CHALLENGE_TOKEN = os.getenv('INTASEND_CHALLENGE_TOKEN')
-INTASEND_STK_WEBHOOK_URL = os.getenv('INTASEND_STK_WEBHOOK_URL')
 INTASEND_B2C_WEBHOOK_URL = os.getenv('INTASEND_B2C_WEBHOOK_URL')
-
-DATABASE_URL = os.getenv('DATABASE_URL')
-
-PAHERO_API_USERNAME = os.getenv('PAHERO_API_USERNAME')
-PAHERO_API_PASSWORD = os.getenv('PAHERO_API_PASSWORD')
-PAHERO_API_ACCOUNT_ID = os.getenv('PAHERO_API_ACCOUNT_ID')
-PAHERO_API_CHANNEL_ID = os.getenv('PAHERO_API_CHANNEL_ID')
-PAHERO_API_CALLBACK_URL = os.getenv('PAHERO_API_CALLBACK_URL')
-
-PASSKEY = os.getenv('PASSKEY')
-CONSUMER_KEY = os.getenv('CONSUMER_KEY')
-CONSUMER_SECRET = os.getenv('CONSUMER_SECRET')
-ACCESS_TOKEN_URL = 'https://sandbox.safaricom.co.ke/oauth/v1/generategrant_type=client_credentials'
-MPESA_CALLBACK_URL = 'https://flexicash-23ff5ac55c24.herokuapp.com/api/v2/mpesa_callback/'
-
-
 
 INSTALLED_APPS = [
     
